@@ -1,5 +1,6 @@
-from pymongo import MongoCLient
+from pymongo import MongoClient
 
 def get_db():
-    cliente = MongoCLient("localhost:27017")
+    cliente = MongoClient("localhost:27017")
     db = cliente["Reservas"]
+    return db
