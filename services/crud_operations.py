@@ -1,12 +1,9 @@
-# services/crud_operations.py
-
 from services.mongo_service import get_collection
 from models.user_model import UserModel
 from models.recurso_model import RecursoModel
 from models.reserva_model import ReservaModel
 from bson.objectid import ObjectId
 
-# Usuarios
 def create_usuario(user: UserModel):
     collection = get_collection("usuarios")
     result = collection.insert_one(user.dict())

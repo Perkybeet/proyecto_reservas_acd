@@ -1,5 +1,3 @@
-# services/mongo_service.py
-
 from pymongo import MongoClient
 from utils.config import MONGO_URI, DATABASE_NAME
 

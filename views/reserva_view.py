@@ -7,16 +7,16 @@ from bson.objectid import ObjectId
 from utils.validators import validate_fecha
 
 class ReservaView:
-    def __init__(self):
-        self.reservas = leer_reservas()
-        self.page = None
-        self.form = None
+    def __init__(self, page: ft.Page):
+        self.page = page
+        self.reservas = []
         self.list_view = ft.Column()
+        self.load_reservas()
+
+    def load_reservas(self):
+        self.reservas = leer_reservas()
 
     def get_view(self):
-        self.page = ft.Page()
-        self.list_view = ft.Column()
-
         # Botón para crear nueva reserva
         btn_nueva_reserva = ft.ElevatedButton("Nueva Reserva", on_click=self.show_form_crear)
 
@@ -34,7 +34,7 @@ class ReservaView:
         return view
 
     def refresh_list(self):
-        self.reservas = leer_reservas()
+        self.load_reservas()
         self.list_view.controls.clear()
         for reserva in self.reservas:
             reserva_id = str(reserva["_id"])
@@ -82,7 +82,7 @@ class ReservaView:
             actions_alignment=ft.MainAxisAlignment.END
         )
         self.page.dialog = self.form
-        self.page.dialog.open = True
+        self.form.open = True
         self.page.update()
 
     def crear_reserva(self, e):
@@ -136,7 +136,7 @@ class ReservaView:
             actions_alignment=ft.MainAxisAlignment.END
         )
         self.page.dialog = self.form
-        self.page.dialog.open = True
+        self.form.open = True
         self.page.update()
 
     def actualizar_reserva(self, reserva_id):
@@ -172,7 +172,7 @@ class ReservaView:
             actions_alignment=ft.MainAxisAlignment.END
         )
         self.page.dialog = confirm
-        self.page.dialog.open = True
+        confirm.open = True
         self.page.update()
 
     def eliminar_reserva(self, reserva_id):

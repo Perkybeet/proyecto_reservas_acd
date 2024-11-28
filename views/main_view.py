@@ -6,11 +6,13 @@ def main_view(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.START
 
-    # Navegación
-    reserva_view = ReservaView()
+    # Instanciar ReservaView pasando la instancia de Page
+    reserva_view = ReservaView(page)
 
     def navigate_to_reservas(e):
+        # Limpiar vistas existentes
         page.views.clear()
+        # Añadir la vista de reservas
         page.views.append(reserva_view.get_view())
         page.update()
 

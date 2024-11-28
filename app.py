@@ -1,5 +1,3 @@
-# app.py
-
 import flet as ft
 from views.main_view import main_view
 
