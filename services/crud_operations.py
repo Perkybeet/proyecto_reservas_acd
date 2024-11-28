@@ -42,16 +42,24 @@ def eliminar_recurso(recurso_id: str):
 # Reservas
 def create_reserva(reserva: ReservaModel):
     collection = get_collection("reservas")
-    result = collection.insert_one(reserva.dict())
-    return str(result.inserted_id)
+    # Convertir a diccionario y asegurar que las IDs son cadenas
+    reserva_dict = reserva.dict()
+    collection.insert_one(reserva_dict)
+    return True
 
 def leer_reservas():
     collection = get_collection("reservas")
-    return list(collection.find())
+    reservas = list(collection.find())
+    # Convertir ObjectId a cadena para facilitar el manejo en la UI
+    for reserva in reservas:
+        reserva["_id"] = str(reserva["_id"])
+    return reservas
 
 def actualizar_reserva(reserva_id: str, reserva: ReservaModel):
     collection = get_collection("reservas")
-    collection.update_one({"_id": ObjectId(reserva_id)}, {"$set": reserva.dict()})
+    # Convertir a diccionario y asegurar que las IDs son cadenas
+    reserva_dict = reserva.dict()
+    collection.update_one({"_id": ObjectId(reserva_id)}, {"$set": reserva_dict})
 
 def eliminar_reserva(reserva_id: str):
     collection = get_collection("reservas")

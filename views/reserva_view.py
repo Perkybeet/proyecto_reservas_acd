@@ -58,22 +58,28 @@ class ReservaView:
         self.page.update()
 
     def show_form_crear(self, e):
+        # Asignar cada campo a una variable
+        self.usuario_id_field = ft.TextField(label="Usuario ID", id="usuario_id")
+        self.recurso_id_field = ft.TextField(label="Recurso ID", id="recurso_id")
+        self.fecha_reserva_field = ft.TextField(label="Fecha Reserva (YYYY-MM-DD)", id="fecha_reserva")
+        self.estado_field = ft.Dropdown(
+            label="Estado",
+            options=[
+                ft.dropdown.Option("Pendiente"),
+                ft.dropdown.Option("Confirmada"),
+                ft.dropdown.Option("Cancelada"),
+            ],
+            value="Pendiente",
+            id="estado"
+        )
+
         self.form = ft.AlertDialog(
             title=ft.Text("Crear Nueva Reserva"),
             content=ft.Column([
-                ft.TextField(label="Usuario ID", id="usuario_id"),
-                ft.TextField(label="Recurso ID", id="recurso_id"),
-                ft.TextField(label="Fecha Reserva (YYYY-MM-DD)", id="fecha_reserva"),
-                ft.Dropdown(
-                    label="Estado",
-                    options=[
-                        ft.dropdown.Option("Pendiente"),
-                        ft.dropdown.Option("Confirmada"),
-                        ft.dropdown.Option("Cancelada"),
-                    ],
-                    value="Pendiente",
-                    id="estado"
-                ),
+                self.usuario_id_field,
+                self.recurso_id_field,
+                self.fecha_reserva_field,
+                self.estado_field,
             ]),
             actions=[
                 ft.TextButton("Cancelar", on_click=lambda e: self.page.dialog.close()),
@@ -86,10 +92,10 @@ class ReservaView:
         self.page.update()
 
     def crear_reserva(self, e):
-        usuario_id = self.form.content.controls[0].value
-        recurso_id = self.form.content.controls[1].value
-        fecha_reserva = self.form.content.controls[2].value
-        estado = self.form.content.controls[3].value
+        usuario_id = self.usuario_id_field.value
+        recurso_id = self.recurso_id_field.value
+        fecha_reserva = self.fecha_reserva_field.value
+        estado = self.estado_field.value
 
         try:
             validate_fecha(fecha_reserva)
@@ -112,22 +118,28 @@ class ReservaView:
         if not reserva:
             return
 
+        # Asignar cada campo a una variable
+        self.usuario_id_field = ft.TextField(label="Usuario ID", value=reserva["usuario_id"], id="usuario_id")
+        self.recurso_id_field = ft.TextField(label="Recurso ID", value=reserva["recurso_id"], id="recurso_id")
+        self.fecha_reserva_field = ft.TextField(label="Fecha Reserva (YYYY-MM-DD)", value=reserva["fecha_reserva"], id="fecha_reserva")
+        self.estado_field = ft.Dropdown(
+            label="Estado",
+            options=[
+                ft.dropdown.Option("Pendiente"),
+                ft.dropdown.Option("Confirmada"),
+                ft.dropdown.Option("Cancelada"),
+            ],
+            value=reserva["estado"],
+            id="estado"
+        )
+
         self.form = ft.AlertDialog(
             title=ft.Text("Editar Reserva"),
             content=ft.Column([
-                ft.TextField(label="Usuario ID", value=reserva["usuario_id"], id="usuario_id"),
-                ft.TextField(label="Recurso ID", value=reserva["recurso_id"], id="recurso_id"),
-                ft.TextField(label="Fecha Reserva (YYYY-MM-DD)", value=reserva["fecha_reserva"], id="fecha_reserva"),
-                ft.Dropdown(
-                    label="Estado",
-                    options=[
-                        ft.dropdown.Option("Pendiente"),
-                        ft.dropdown.Option("Confirmada"),
-                        ft.dropdown.Option("Cancelada"),
-                    ],
-                    value=reserva["estado"],
-                    id="estado"
-                ),
+                self.usuario_id_field,
+                self.recurso_id_field,
+                self.fecha_reserva_field,
+                self.estado_field,
             ]),
             actions=[
                 ft.TextButton("Cancelar", on_click=lambda e: self.page.dialog.close()),
@@ -140,10 +152,10 @@ class ReservaView:
         self.page.update()
 
     def actualizar_reserva(self, reserva_id):
-        usuario_id = self.form.content.controls[0].value
-        recurso_id = self.form.content.controls[1].value
-        fecha_reserva = self.form.content.controls[2].value
-        estado = self.form.content.controls[3].value
+        usuario_id = self.usuario_id_field.value
+        recurso_id = self.recurso_id_field.value
+        fecha_reserva = self.fecha_reserva_field.value
+        estado = self.estado_field.value
 
         try:
             validate_fecha(fecha_reserva)
