@@ -1,6 +1,6 @@
 from services.mongo_service import get_collection
 from models.user_model import UserModel
-from models.recurso_model import RecursoModel
+from models.mesa_model import MesaModel
 from models.reserva_model import ReservaModel
 from bson.objectid import ObjectId
 
@@ -21,23 +21,23 @@ def eliminar_usuario(user_id: str):
     collection = get_collection("usuarios")
     collection.delete_one({"_id": ObjectId(user_id)})
 
-# Recursos
-def create_recurso(recurso: RecursoModel):
-    collection = get_collection("recursos")
-    result = collection.insert_one(recurso.model_dump())
+# Mesas
+def create_mesa(mesa: MesaModel):
+    collection = get_collection("mesas")
+    result = collection.insert_one(mesa.model_dump())
     return str(result.inserted_id)
 
-def leer_recursos():
-    collection = get_collection("recursos")
+def leer_mesas():
+    collection = get_collection("mesas")
     return list(collection.find())
 
-def actualizar_recurso(recurso_id: str, recurso: RecursoModel):
-    collection = get_collection("recursos")
-    collection.update_one({"_id": ObjectId(recurso_id)}, {"$set": recurso.model_dump()})
+def actualizar_mesa(mesa_id: str, mesa: MesaModel):
+    collection = get_collection("mesas")
+    collection.update_one({"_id": ObjectId(mesa_id)}, {"$set": mesa.model_dump()})
 
-def eliminar_recurso(recurso_id: str):
-    collection = get_collection("recursos")
-    collection.delete_one({"_id": ObjectId(recurso_id)})
+def eliminar_mesa(mesa_id: str):
+    collection = get_collection("mesas")
+    collection.delete_one({"_id": ObjectId(mesa_id)})
 
 # Reservas
 def create_reserva(reserva: ReservaModel):
