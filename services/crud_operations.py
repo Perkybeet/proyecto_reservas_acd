@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 
 def create_usuario(user: UserModel):
     collection = get_collection("usuarios")
-    result = collection.insert_one(user.dict())
+    result = collection.insert_one(user.model_dump())
     return str(result.inserted_id)
 
 def leer_usuarios():
@@ -15,7 +15,7 @@ def leer_usuarios():
 
 def actualizar_usuario(user_id: str, user: UserModel):
     collection = get_collection("usuarios")
-    collection.update_one({"_id": ObjectId(user_id)}, {"$set": user.dict()})
+    collection.update_one({"_id": ObjectId(user_id)}, {"$set": user.model_dump()})
 
 def eliminar_usuario(user_id: str):
     collection = get_collection("usuarios")
@@ -24,7 +24,7 @@ def eliminar_usuario(user_id: str):
 # Recursos
 def create_recurso(recurso: RecursoModel):
     collection = get_collection("recursos")
-    result = collection.insert_one(recurso.dict())
+    result = collection.insert_one(recurso.model_dump())
     return str(result.inserted_id)
 
 def leer_recursos():
@@ -33,7 +33,7 @@ def leer_recursos():
 
 def actualizar_recurso(recurso_id: str, recurso: RecursoModel):
     collection = get_collection("recursos")
-    collection.update_one({"_id": ObjectId(recurso_id)}, {"$set": recurso.dict()})
+    collection.update_one({"_id": ObjectId(recurso_id)}, {"$set": recurso.model_dump()})
 
 def eliminar_recurso(recurso_id: str):
     collection = get_collection("recursos")
@@ -43,8 +43,8 @@ def eliminar_recurso(recurso_id: str):
 def create_reserva(reserva: ReservaModel):
     collection = get_collection("reservas")
     # Convertir a diccionario y asegurar que las IDs son cadenas
-    reserva_dict = reserva.dict()
-    collection.insert_one(reserva_dict)
+    reserva_model_dump = reserva.model_dump()
+    collection.insert_one(reserva_model_dump)
     return True
 
 def leer_reservas():
@@ -58,8 +58,8 @@ def leer_reservas():
 def actualizar_reserva(reserva_id: str, reserva: ReservaModel):
     collection = get_collection("reservas")
     # Convertir a diccionario y asegurar que las IDs son cadenas
-    reserva_dict = reserva.dict()
-    collection.update_one({"_id": ObjectId(reserva_id)}, {"$set": reserva_dict})
+    reserva_model_dump = reserva.model_dump()
+    collection.update_one({"_id": ObjectId(reserva_id)}, {"$set": reserva_model_dump})
 
 def eliminar_reserva(reserva_id: str):
     collection = get_collection("reservas")
