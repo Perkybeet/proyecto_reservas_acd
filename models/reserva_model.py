@@ -4,8 +4,9 @@ from datetime import datetime
 from bson import ObjectId
 
 class ReservaModel(BaseModel):
-    cliente_id: int = None
-    mesa_id: int = None
+    _id: str = None
+    cliente_id: str = None
+    mesa_id: str = None
     fecha_hora: datetime = None
     estado: Optional[str] = "Pendiente"  # "Pendiente", "Confirmada", "Cancelada"
     notas: Optional[str] = None

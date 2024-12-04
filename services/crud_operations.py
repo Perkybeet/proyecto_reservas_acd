@@ -4,7 +4,7 @@ from models.mesa_model import MesaModel
 from models.reserva_model import ReservaModel
 from bson.objectid import ObjectId
 
-def create_usuario(user: UserModel):
+def insertar_usuario(user: UserModel):
     collection = get_collection("usuarios")
     result = collection.insert_one(user.model_dump())
     return str(result.inserted_id)
@@ -22,7 +22,7 @@ def eliminar_usuario(user_id: str):
     collection.delete_one({"_id": ObjectId(user_id)})
 
 # Mesas
-def create_mesa(mesa: MesaModel):
+def insertar_mesa(mesa: MesaModel):
     collection = get_collection("mesas")
     result = collection.insert_one(mesa.model_dump())
     return str(result.inserted_id)
@@ -40,7 +40,7 @@ def eliminar_mesa(mesa_id: str):
     collection.delete_one({"_id": ObjectId(mesa_id)})
 
 # Reservas
-def create_reserva(reserva: ReservaModel):
+def insertar_reserva(reserva: ReservaModel):
     collection = get_collection("reservas")
     # Convertir a diccionario y asegurar que las IDs son cadenas
     reserva_model_dump = reserva.model_dump()
