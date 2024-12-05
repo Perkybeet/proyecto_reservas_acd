@@ -53,6 +53,8 @@ def leer_reservas():
     # Convertir ObjectId a cadena para facilitar el manejo en la UI
     for reserva in reservas:
         reserva["_id"] = str(reserva["_id"])
+        reserva["fecha_reserva"] = str(reserva["fecha_reserva"]).split()[0]
+
     return reservas
 
 def actualizar_reserva(reserva_id: str, reserva: ReservaModel):

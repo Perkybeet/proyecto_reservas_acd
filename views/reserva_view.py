@@ -46,7 +46,7 @@ class ReservaView:
             reserva_item = ft.Row(
                 controls=[
                     ft.Text(f"Usuario ID: {cliente_id}"),
-                    ft.Text(f"Recurso ID: {mesa_id}"),
+                    ft.Text(f"Mesa ID: {mesa_id}"),
                     ft.Text(f"Fecha: {fecha_reserva}"),
                     ft.Text(f"Estado: {estado}"),
                     ft.IconButton(ft.icons.EDIT, on_click=lambda e, rid=reserva_id: self.show_form_editar(rid)),
@@ -57,10 +57,17 @@ class ReservaView:
             self.list_view.controls.append(reserva_item)
         self.page.update()
 
+    def close_dialog(self):
+        if self.page.dialog:
+            self.page.dialog.open = False
+            self.page.dialog = None
+            self.page.update()
+
     def show_form_crear(self, e):
         # Asignar cada campo a una variable
+        self.reserva_id_field = ft.TextField(label="ID")
         self.cliente_id_field = ft.TextField(label="Usuario ID")
-        self.mesa_id_field = ft.TextField(label="Recurso ID")
+        self.mesa_id_field = ft.TextField(label="Mesa ID")
         self.fecha_reserva_field = ft.TextField(label="Fecha Reserva (YYYY-MM-DD)")
         self.estado_field = ft.Dropdown(
             label="Estado",
@@ -71,6 +78,7 @@ class ReservaView:
             ],
             value="Pendiente"
         )
+        self.notas_field = ft.TextField(label="Notas")
 
         self.form = ft.AlertDialog(
             title=ft.Text("Crear Nueva Reserva"),
@@ -83,7 +91,7 @@ class ReservaView:
                 self.notas_field
             ]),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.page.dialog.close()),
+                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
                 ft.ElevatedButton("Crear", on_click=self.crear_reserva),
             ],
             actions_alignment=ft.MainAxisAlignment.END
@@ -111,7 +119,7 @@ class ReservaView:
                 notas=notas
             )
             insertar_reserva(reserva)
-            self.page.dialog.close()
+            self.close_dialog()
             self.refresh_list()
         except ValueError as ve:
             self.page.snack_bar = ft.SnackBar(ft.Text(str(ve)))
@@ -124,10 +132,10 @@ class ReservaView:
             return
 
         # Asignar cada campo a una variable
-        self.reserva_id_field = ft.TextField(label="ID", value=reserva["_id"], id="reserva_id")
-        self.cliente_id_field = ft.TextField(label="Usuario ID", value=reserva["cliente_id"], id="cliente_id")
-        self.mesa_id_field = ft.TextField(label="Recurso ID", value=reserva["mesa_id"], id="mesa_id")
-        self.fecha_reserva_field = ft.TextField(label="Fecha Reserva (YYYY-MM-DD)", value=reserva["fecha_reserva"], id="fecha_reserva")
+        self.reserva_id_field = ft.TextField(label="ID", value=reserva["_id"], disabled=True)
+        self.cliente_id_field = ft.TextField(label="Usuario ID", value=reserva["cliente_id"])
+        self.mesa_id_field = ft.TextField(label="Mesa ID", value=reserva["mesa_id"])
+        self.fecha_reserva_field = ft.TextField(label="Fecha Reserva (YYYY-MM-DD)", value=reserva["fecha_reserva"])
         self.estado_field = ft.Dropdown(
             label="Estado",
             options=[
@@ -135,22 +143,22 @@ class ReservaView:
                 ft.dropdown.Option("Confirmada"),
                 ft.dropdown.Option("Cancelada"),
             ],
-            value=reserva["estado"],
-            id="estado"
+            value=reserva["estado"]
         )
-
-        self.notas_field = ft.TextField(label="Notas", value=reserva["notas"], id="notas")
+        self.notas_field = ft.TextField(label="Notas", value=reserva.get("notas", ""))
 
         self.form = ft.AlertDialog(
             title=ft.Text("Editar Reserva"),
             content=ft.Column([
+                self.reserva_id_field,
                 self.cliente_id_field,
                 self.mesa_id_field,
                 self.fecha_reserva_field,
                 self.estado_field,
+                self.notas_field
             ]),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.page.dialog.close()),
+                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
                 ft.ElevatedButton("Actualizar", on_click=lambda e: self.actualizar_reserva(reserva_id)),
             ],
             actions_alignment=ft.MainAxisAlignment.END
@@ -164,6 +172,7 @@ class ReservaView:
         mesa_id = self.mesa_id_field.value
         fecha_reserva = self.fecha_reserva_field.value
         estado = self.estado_field.value
+        notas = self.notas_field.value
 
         try:
             validate_fecha(fecha_reserva)
@@ -171,10 +180,11 @@ class ReservaView:
                 cliente_id=cliente_id,
                 mesa_id=mesa_id,
                 fecha_reserva=fecha_reserva,
-                estado=estado
+                estado=estado,
+                notas=notas
             )
             actualizar_reserva(reserva_id, reserva)
-            self.page.dialog.close()
+            self.close_dialog()
             self.refresh_list()
         except ValueError as ve:
             self.page.snack_bar = ft.SnackBar(ft.Text(str(ve)))
@@ -186,7 +196,7 @@ class ReservaView:
             title=ft.Text("Confirmar Eliminación"),
             content=ft.Text("¿Estás seguro de que deseas eliminar esta reserva?"),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.page.dialog.close()),
+                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
                 ft.ElevatedButton("Eliminar", on_click=lambda e: self.eliminar_reserva(reserva_id)),
             ],
             actions_alignment=ft.MainAxisAlignment.END
@@ -197,5 +207,5 @@ class ReservaView:
 
     def eliminar_reserva(self, reserva_id):
         eliminar_reserva(reserva_id)
-        self.page.dialog.close()
+        self.close_dialog()
         self.refresh_list()
