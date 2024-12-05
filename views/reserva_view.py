@@ -1,7 +1,7 @@
 # views/reserva_view.py
 
 import flet as ft
-from services.crud_operations import leer_reservas, create_reserva, actualizar_reserva, eliminar_reserva
+from services.crud_operations import leer_reservas, insertar_reserva, actualizar_reserva, eliminar_reserva
 from models.reserva_model import ReservaModel
 from bson.objectid import ObjectId
 from utils.validators import validate_fecha
@@ -105,7 +105,7 @@ class ReservaView:
                 fecha_reserva=fecha_reserva,
                 estado=estado
             )
-            create_reserva(reserva)
+            insertar_reserva(reserva)
             self.page.dialog.close()
             self.refresh_list()
         except ValueError as ve:
