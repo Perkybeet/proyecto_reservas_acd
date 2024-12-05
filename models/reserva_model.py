@@ -7,6 +7,6 @@ class ReservaModel(BaseModel):
     _id: str = None
     cliente_id: str = None
     mesa_id: str = None
-    fecha_hora: datetime = None
+    fecha_reserva: datetime = None
     estado: Optional[str] = "Pendiente"  # "Pendiente", "Confirmada", "Cancelada"
     notas: Optional[str] = None
