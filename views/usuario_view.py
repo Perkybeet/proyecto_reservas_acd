@@ -40,13 +40,14 @@ class UsuarioView:
         self.load_usuarios()
         self.list_view.controls.clear()
         for usuario in self.usuarios:
-            usuario_id = str(usuario["_id"])
+            usuario_id = str(usuario["id"])
             nombre = usuario["nombre"]
             email = usuario["email"]
             telefono = usuario["telefono"]
 
             usuario_item = ft.Row(
                 controls=[
+                    ft.Text(f"ID: {usuario_id}"),
                     ft.Text(f"Nombre: {nombre}"),
                     ft.Text(f"Email: {email}"),
                     ft.Text(f"Teléfono: {telefono}"),
@@ -66,6 +67,7 @@ class UsuarioView:
 
     def show_form_crear(self, e):
         # Campos del formulario
+        self.usuario_id_field = ft.TextField(label="ID", value="")
         self.nombre_field = ft.TextField(label="Nombre")
         self.email_field = ft.TextField(label="Email")
         self.telefono_field = ft.TextField(label="Teléfono")
@@ -74,6 +76,7 @@ class UsuarioView:
         self.form = ft.AlertDialog(
             title=ft.Text("Crear Nuevo Usuario"),
             content=ft.Column([
+                self.usuario_id_field,
                 self.nombre_field,
                 self.email_field,
                 self.telefono_field,
@@ -90,6 +93,7 @@ class UsuarioView:
         self.page.update()
 
     def crear_usuario(self, e):
+        usuario_id = self.usuario_id_field.value.strip()
         nombre = self.nombre_field.value.strip()
         email = self.email_field.value.strip()
         telefono = self.telefono_field.value.strip()
@@ -127,6 +131,7 @@ class UsuarioView:
             validate_email(email)
             validate_telefono(telefono)
             usuario = UserModel(
+                id=usuario_id,
                 nombre=nombre,
                 email=email,
                 telefono=telefono,
@@ -141,11 +146,12 @@ class UsuarioView:
             self.page.update()
 
     def show_form_editar(self, usuario_id):
-        usuario = next((u for u in self.usuarios if str(u["_id"]) == usuario_id), None)
+        usuario = next((u for u in self.usuarios if str(u["id"]) == usuario_id), None)
         if not usuario:
             return
 
         # Campos del formulario con valores prellenados
+        self.usuario_id_field = ft.TextField(label="ID", disabled=False, value=str(usuario["id"]))
         self.nombre_field = ft.TextField(label="Nombre", value=usuario["nombre"])
         self.email_field = ft.TextField(label="Email", value=usuario["email"])
         self.telefono_field = ft.TextField(label="Teléfono", value=usuario["telefono"])
@@ -154,6 +160,7 @@ class UsuarioView:
         self.form = ft.AlertDialog(
             title=ft.Text("Editar Usuario"),
             content=ft.Column([
+                self.usuario_id_field,
                 self.nombre_field,
                 self.email_field,
                 self.telefono_field,
@@ -169,7 +176,8 @@ class UsuarioView:
         self.form.open = True
         self.page.update()
 
-    def actualizar_usuario(self, usuario_id):
+    def actualizar_usuario(self, usuario_id: str):
+        usuario = self.usuario_id_field.value.strip()
         nombre = self.nombre_field.value.strip()
         email = self.email_field.value.strip()
         telefono = self.telefono_field.value.strip()
@@ -207,6 +215,7 @@ class UsuarioView:
             validate_email(email)
             validate_telefono(telefono)
             usuario = UserModel(
+                id=usuario,
                 nombre=nombre,
                 email=email,
                 telefono=telefono,

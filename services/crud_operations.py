@@ -17,11 +17,11 @@ def leer_usuarios():
 
 def actualizar_usuario(user_id: str, user: UserModel):
     collection = get_collection("usuarios")
-    collection.update_one({"_id": ObjectId(user_id)}, {"$set": user.model_dump()})
+    collection.update_one({"id": user_id}, {"$set": user.model_dump()})
 
 def eliminar_usuario(user_id: str):
     collection = get_collection("usuarios")
-    collection.delete_one({"_id": ObjectId(user_id)})
+    collection.delete_one({"id": user_id})
 
 # --- Funciones CRUD para Mesas ---
 def insertar_mesa(mesa: MesaModel):
@@ -35,11 +35,11 @@ def leer_mesas():
 
 def actualizar_mesa(mesa_id: str, mesa: MesaModel):
     collection = get_collection("mesas")
-    collection.update_one({"_id": ObjectId(mesa_id)}, {"$set": mesa.model_dump()})
+    collection.update_one({"id": mesa_id}, {"$set": mesa.model_dump()})
 
 def eliminar_mesa(mesa_id: str):
     collection = get_collection("mesas")
-    collection.delete_one({"_id": ObjectId(mesa_id)})
+    collection.delete_one({"id": mesa_id})
 
 # --- Funciones CRUD para Reservas ---
 def insertar_reserva(reserva: ReservaModel):
@@ -54,7 +54,7 @@ def leer_reservas():
     reservas = list(collection.find())
     # Convertir ObjectId a cadena para facilitar el manejo en la UI
     for reserva in reservas:
-        reserva["_id"] = str(reserva["_id"])
+        reserva["id"] = str(reserva["id"])
         reserva["fecha_reserva"] = str(reserva["fecha_reserva"]).split()[0]
     return reservas
 
@@ -62,11 +62,11 @@ def actualizar_reserva(reserva_id: str, reserva: ReservaModel):
     collection = get_collection("reservas")
     # Convertir a diccionario y asegurar que las IDs son cadenas
     reserva_model_dump = reserva.model_dump()
-    collection.update_one({"_id": ObjectId(reserva_id)}, {"$set": reserva_model_dump})
+    collection.update_one({"id": reserva_id}, {"$set": reserva_model_dump})
 
 def eliminar_reserva(reserva_id: str):
     collection = get_collection("reservas")
-    collection.delete_one({"_id": ObjectId(reserva_id)})
+    collection.delete_one({"id": reserva_id})
 
 # --- Funciones de Conteo ---
 def contar_usuarios():
@@ -83,4 +83,4 @@ def contar_reservas():
 
 def obtener_usuarios_para_dropdown():
     usuarios = leer_usuarios()
-    return [{"id": usuario["_id"], "nombre": usuario["nombre"], "email": usuario["email"]} for usuario in usuarios]
+    return [{"id": usuario["id"], "nombre": usuario["nombre"], "email": usuario["email"]} for usuario in usuarios]

@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 class UserModel(BaseModel):
-    _id: str = None
+    id: str = None
     nombre: str = None
     telefono: str = None
     email: EmailStr = None

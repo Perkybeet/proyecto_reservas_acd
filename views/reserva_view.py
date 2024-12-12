@@ -53,17 +53,17 @@ class ReservaView:
         self.load_reservas()
         self.list_view.controls.clear()
         for reserva in self.reservas:
-            reserva_id = str(reserva["_id"])
+            reserva_id = str(reserva["id"])
             cliente_id = reserva["cliente_id"]
             mesa_id = reserva["mesa_id"]
             fecha_reserva = reserva["fecha_reserva"]
             estado = reserva["estado"]
 
             # Obtener el nombre del usuario y número de mesa
-            usuario = next((u for u in self.usuarios if str(u["_id"]) == cliente_id), None)
+            usuario = next((u for u in self.usuarios if str(u["id"]) == cliente_id), None)
             usuario_nombre = usuario["nombre"] if usuario else "Desconocido"
 
-            mesa = next((m for m in self.mesas if str(m["_id"]) == mesa_id), None)
+            mesa = next((m for m in self.mesas if str(m["id"]) == mesa_id), None)
             mesa_numero = mesa["numero_mesa"] if mesa else "Desconocida"
 
             reserva_item = ft.Row(
@@ -90,34 +90,25 @@ class ReservaView:
         # Obtener todos los usuarios para el Dropdown
         usuarios = self.usuarios
         opciones_usuarios = [
-            ft.dropdown.Option(text=f"{user['nombre']} ({user['email']})", value=str(user["_id"]))
+            ft.dropdown.Option(text=f"{user['nombre']}", key=str(user["id"]))
             for user in usuarios
         ]
         # Agregar una opción predeterminada
-        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario", value=""))
+        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario"))
 
         # Obtener todas las mesas para el Dropdown
         mesas = self.mesas
         opciones_mesas = [
-            ft.dropdown.Option(text=f"Mesa {mesa['numero_mesa']}", value=str(mesa["_id"]))
+            ft.dropdown.Option(text=f"{mesa['numero_mesa']}", key=str(mesa["id"]))
             for mesa in mesas
         ]
         # Agregar una opción predeterminada
-        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", value=""))
+        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa"))
 
         # Campos del formulario
-        self.cliente_dropdown = ft.Dropdown(
-            label="Usuario",
-            options=opciones_usuarios,
-            value="",  # Valor predeterminado vacío
-        )
-
-        self.mesa_id_dropdown = ft.Dropdown(
-            label="Mesa",
-            options=opciones_mesas,
-            value="",  # Valor predeterminado vacío
-        )
-
+        self.reserva_id_field = ft.TextField(label="ID")
+        self.cliente_dropdown = ft.Dropdown(label="Usuario", options=opciones_usuarios,)
+        self.mesa_id_dropdown = ft.Dropdown(label="Mesa", options=opciones_mesas)
         self.fecha_reserva_field = ft.TextField(label="Fecha Reserva (YYYY-MM-DD)")
         self.estado_field = ft.Dropdown(
             label="Estado",
@@ -133,6 +124,7 @@ class ReservaView:
         self.form = ft.AlertDialog(
             title=ft.Text("Crear Nueva Reserva"),
             content=ft.Column([
+                self.reserva_id_field,
                 self.cliente_dropdown,
                 self.mesa_id_dropdown,
                 self.fecha_reserva_field,
@@ -150,6 +142,7 @@ class ReservaView:
         self.page.update()
 
     def crear_reserva(self, e):
+        reserva_id = self.reserva_id_field.value.strip()
         cliente_id = self.cliente_dropdown.value
         mesa_id = self.mesa_id_dropdown.value
         fecha_reserva = self.fecha_reserva_field.value.strip()
@@ -187,7 +180,8 @@ class ReservaView:
         try:
             validate_fecha(fecha_reserva)
             reserva = ReservaModel(
-                cliente_id=cliente_id,  # Usar directamente el _id seleccionado
+                id=reserva_id,
+                cliente_id=cliente_id,
                 mesa_id=mesa_id,
                 fecha_reserva=fecha_reserva,
                 estado=estado,
@@ -202,29 +196,30 @@ class ReservaView:
             self.page.update()
 
     def show_form_editar(self, reserva_id):
-        reserva = next((r for r in self.reservas if str(r["_id"]) == reserva_id), None)
+        reserva = next((r for r in self.reservas if str(r["id"]) == reserva_id), None)
         if not reserva:
             return
 
         # Obtener todos los usuarios para el Dropdown
         usuarios = self.usuarios
         opciones_usuarios = [
-            ft.dropdown.Option(text=f"{user['nombre']} ({user['email']})", value=str(user["_id"]))
+            ft.dropdown.Option(text=f"{user['nombre']}", key=user["id"])
             for user in usuarios
         ]
         # Agregar una opción predeterminada
-        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario", value=""))
+        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario"))
 
         # Obtener todas las mesas para el Dropdown
         mesas = self.mesas
         opciones_mesas = [
-            ft.dropdown.Option(text=f"Mesa {mesa['numero_mesa']}", value=str(mesa["_id"]))
+            ft.dropdown.Option(text=f"{mesa['numero_mesa']}", key=mesa["id"])
             for mesa in mesas
         ]
         # Agregar una opción predeterminada
-        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", value=""))
+        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa"))
 
         # Campos del formulario con valores prellenados
+        self.reserva_id_field = ft.TextField(label="ID", disabled=True, value=str(reserva["id"]))
         self.cliente_dropdown = ft.Dropdown(
             label="Usuario",
             options=opciones_usuarios,
@@ -252,6 +247,7 @@ class ReservaView:
         self.form = ft.AlertDialog(
             title=ft.Text("Editar Reserva"),
             content=ft.Column([
+                self.reserva_id_field,
                 self.cliente_dropdown,
                 self.mesa_id_dropdown,
                 self.fecha_reserva_field,
