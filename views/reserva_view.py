@@ -1,7 +1,13 @@
-# views/reserva_view.py
-
+# /views/reserva_view.py
 import flet as ft
-from services.crud_operations import leer_reservas, insertar_reserva, actualizar_reserva, eliminar_reserva
+from services.crud_operations import (
+    leer_reservas,
+    insertar_reserva,
+    actualizar_reserva,
+    eliminar_reserva,
+    leer_mesas,
+    leer_usuarios
+)
 from models.reserva_model import ReservaModel
 from bson.objectid import ObjectId
 from utils.validators import validate_fecha
@@ -10,11 +16,21 @@ class ReservaView:
     def __init__(self, page: ft.Page):
         self.page = page
         self.reservas = []
+        self.mesas = []
+        self.usuarios = []
         self.list_view = ft.Column()
         self.load_reservas()
+        self.load_mesas()
+        self.load_usuarios()
 
     def load_reservas(self):
         self.reservas = leer_reservas()
+
+    def load_mesas(self):
+        self.mesas = leer_mesas()
+
+    def load_usuarios(self):
+        self.usuarios = leer_usuarios()
 
     def get_view(self):
         # Botón para crear nueva reserva
@@ -43,10 +59,17 @@ class ReservaView:
             fecha_reserva = reserva["fecha_reserva"]
             estado = reserva["estado"]
 
+            # Obtener el nombre del usuario y número de mesa
+            usuario = next((u for u in self.usuarios if str(u["_id"]) == cliente_id), None)
+            usuario_nombre = usuario["nombre"] if usuario else "Desconocido"
+
+            mesa = next((m for m in self.mesas if str(m["_id"]) == mesa_id), None)
+            mesa_numero = mesa["numero_mesa"] if mesa else "Desconocida"
+
             reserva_item = ft.Row(
                 controls=[
-                    ft.Text(f"Usuario ID: {cliente_id}"),
-                    ft.Text(f"Mesa ID: {mesa_id}"),
+                    ft.Text(f"Usuario: {usuario_nombre}"),
+                    ft.Text(f"Mesa: {mesa_numero}"),
                     ft.Text(f"Fecha: {fecha_reserva}"),
                     ft.Text(f"Estado: {estado}"),
                     ft.IconButton(ft.icons.EDIT, on_click=lambda e, rid=reserva_id: self.show_form_editar(rid)),
@@ -64,17 +87,44 @@ class ReservaView:
             self.page.update()
 
     def show_form_crear(self, e):
-        # Asignar cada campo a una variable
-        self.reserva_id_field = ft.TextField(label="ID")
-        self.cliente_id_field = ft.TextField(label="Usuario ID")
-        self.mesa_id_field = ft.TextField(label="Mesa ID")
+        # Obtener todos los usuarios para el Dropdown
+        usuarios = self.usuarios
+        opciones_usuarios = [
+            ft.dropdown.Option(text=f"{user['nombre']} ({user['email']})", value=str(user["_id"]))
+            for user in usuarios
+        ]
+        # Agregar una opción predeterminada
+        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario", value=""))
+
+        # Obtener todas las mesas para el Dropdown
+        mesas = self.mesas
+        opciones_mesas = [
+            ft.dropdown.Option(text=f"Mesa {mesa['numero_mesa']}", value=str(mesa["_id"]))
+            for mesa in mesas
+        ]
+        # Agregar una opción predeterminada
+        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", value=""))
+
+        # Campos del formulario
+        self.cliente_dropdown = ft.Dropdown(
+            label="Usuario",
+            options=opciones_usuarios,
+            value="",  # Valor predeterminado vacío
+        )
+
+        self.mesa_id_dropdown = ft.Dropdown(
+            label="Mesa",
+            options=opciones_mesas,
+            value="",  # Valor predeterminado vacío
+        )
+
         self.fecha_reserva_field = ft.TextField(label="Fecha Reserva (YYYY-MM-DD)")
         self.estado_field = ft.Dropdown(
             label="Estado",
             options=[
-                ft.dropdown.Option("Pendiente"),
-                ft.dropdown.Option("Confirmada"),
-                ft.dropdown.Option("Cancelada"),
+                ft.dropdown.Option(text="Pendiente"),
+                ft.dropdown.Option(text="Confirmada"),
+                ft.dropdown.Option(text="Cancelada"),
             ],
             value="Pendiente"
         )
@@ -83,9 +133,8 @@ class ReservaView:
         self.form = ft.AlertDialog(
             title=ft.Text("Crear Nueva Reserva"),
             content=ft.Column([
-                self.reserva_id_field,
-                self.cliente_id_field,
-                self.mesa_id_field,
+                self.cliente_dropdown,
+                self.mesa_id_dropdown,
                 self.fecha_reserva_field,
                 self.estado_field,
                 self.notas_field
@@ -101,18 +150,44 @@ class ReservaView:
         self.page.update()
 
     def crear_reserva(self, e):
-        id = self.reserva_id_field.value
-        cliente_id = self.cliente_id_field.value
-        mesa_id = self.mesa_id_field.value
-        fecha_reserva = self.fecha_reserva_field.value
+        cliente_id = self.cliente_dropdown.value
+        mesa_id = self.mesa_id_dropdown.value
+        fecha_reserva = self.fecha_reserva_field.value.strip()
         estado = self.estado_field.value
-        notas = self.notas_field.value
+        notas = self.notas_field.value.strip()
+
+        # Inicializar un flag para detectar errores
+        hay_error = False
+
+        # Validar campos obligatorios
+        if not cliente_id:
+            self.cliente_dropdown.error_text = "Seleccione un usuario."
+            hay_error = True
+        else:
+            self.cliente_dropdown.error_text = None
+
+        if not mesa_id:
+            self.mesa_id_dropdown.error_text = "Seleccione una mesa."
+            hay_error = True
+        else:
+            self.mesa_id_dropdown.error_text = None
+
+        if not fecha_reserva:
+            self.fecha_reserva_field.error_text = "Este campo es obligatorio."
+            hay_error = True
+        else:
+            self.fecha_reserva_field.error_text = None
+
+        # Actualizar la página para mostrar los mensajes de error
+        self.page.update()
+
+        if hay_error:
+            return  # Detener la ejecución si hay errores
 
         try:
             validate_fecha(fecha_reserva)
             reserva = ReservaModel(
-                _id=id,
-                cliente_id=cliente_id,
+                cliente_id=cliente_id,  # Usar directamente el _id seleccionado
                 mesa_id=mesa_id,
                 fecha_reserva=fecha_reserva,
                 estado=estado,
@@ -131,17 +206,44 @@ class ReservaView:
         if not reserva:
             return
 
-        # Asignar cada campo a una variable
-        self.reserva_id_field = ft.TextField(label="ID", value=reserva["_id"], disabled=True)
-        self.cliente_id_field = ft.TextField(label="Usuario ID", value=reserva["cliente_id"])
-        self.mesa_id_field = ft.TextField(label="Mesa ID", value=reserva["mesa_id"])
+        # Obtener todos los usuarios para el Dropdown
+        usuarios = self.usuarios
+        opciones_usuarios = [
+            ft.dropdown.Option(text=f"{user['nombre']} ({user['email']})", value=str(user["_id"]))
+            for user in usuarios
+        ]
+        # Agregar una opción predeterminada
+        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario", value=""))
+
+        # Obtener todas las mesas para el Dropdown
+        mesas = self.mesas
+        opciones_mesas = [
+            ft.dropdown.Option(text=f"Mesa {mesa['numero_mesa']}", value=str(mesa["_id"]))
+            for mesa in mesas
+        ]
+        # Agregar una opción predeterminada
+        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", value=""))
+
+        # Campos del formulario con valores prellenados
+        self.cliente_dropdown = ft.Dropdown(
+            label="Usuario",
+            options=opciones_usuarios,
+            value=reserva["cliente_id"],
+        )
+
+        self.mesa_id_dropdown = ft.Dropdown(
+            label="Mesa",
+            options=opciones_mesas,
+            value=reserva["mesa_id"],
+        )
+
         self.fecha_reserva_field = ft.TextField(label="Fecha Reserva (YYYY-MM-DD)", value=reserva["fecha_reserva"])
         self.estado_field = ft.Dropdown(
             label="Estado",
             options=[
-                ft.dropdown.Option("Pendiente"),
-                ft.dropdown.Option("Confirmada"),
-                ft.dropdown.Option("Cancelada"),
+                ft.dropdown.Option(text="Pendiente"),
+                ft.dropdown.Option(text="Confirmada"),
+                ft.dropdown.Option(text="Cancelada"),
             ],
             value=reserva["estado"]
         )
@@ -150,9 +252,8 @@ class ReservaView:
         self.form = ft.AlertDialog(
             title=ft.Text("Editar Reserva"),
             content=ft.Column([
-                self.reserva_id_field,
-                self.cliente_id_field,
-                self.mesa_id_field,
+                self.cliente_dropdown,
+                self.mesa_id_dropdown,
                 self.fecha_reserva_field,
                 self.estado_field,
                 self.notas_field
@@ -168,11 +269,39 @@ class ReservaView:
         self.page.update()
 
     def actualizar_reserva(self, reserva_id):
-        cliente_id = self.cliente_id_field.value
-        mesa_id = self.mesa_id_field.value
-        fecha_reserva = self.fecha_reserva_field.value
+        cliente_id = self.cliente_dropdown.value
+        mesa_id = self.mesa_id_dropdown.value
+        fecha_reserva = self.fecha_reserva_field.value.strip()
         estado = self.estado_field.value
-        notas = self.notas_field.value
+        notas = self.notas_field.value.strip()
+
+        # Inicializar un flag para detectar errores
+        hay_error = False
+
+        # Validar campos obligatorios
+        if not cliente_id:
+            self.cliente_dropdown.error_text = "Seleccione un usuario."
+            hay_error = True
+        else:
+            self.cliente_dropdown.error_text = None
+
+        if not mesa_id:
+            self.mesa_id_dropdown.error_text = "Seleccione una mesa."
+            hay_error = True
+        else:
+            self.mesa_id_dropdown.error_text = None
+
+        if not fecha_reserva:
+            self.fecha_reserva_field.error_text = "Este campo es obligatorio."
+            hay_error = True
+        else:
+            self.fecha_reserva_field.error_text = None
+
+        # Actualizar la página para mostrar los mensajes de error
+        self.page.update()
+
+        if hay_error:
+            return  # Detener la ejecución si hay errores
 
         try:
             validate_fecha(fecha_reserva)

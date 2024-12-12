@@ -1,5 +1,3 @@
-# utils/validators.py
-
 import re
 
 def validate_email(email: str):
