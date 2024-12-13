@@ -1,4 +1,3 @@
-# /views/usuario_view.py
 import flet as ft
 from services.crud_operations import (
     insertar_usuario,
@@ -20,13 +19,12 @@ class UsuarioView:
         self.usuarios = leer_usuarios()
 
     def get_view(self):
-        # Botón para crear nuevo usuario
         btn_nuevo_usuario = ft.ElevatedButton("Nuevo Usuario", on_click=self.show_form_crear)
 
-        # Listado de usuarios
+        # Obtener el listado de usuarios
         self.refresh_list()
 
-        # Agregar controles a la vista
+        # Agrega controles a la vista
         view = ft.Column(
             controls=[
                 btn_nuevo_usuario,
@@ -66,7 +64,6 @@ class UsuarioView:
             self.page.update()
 
     def show_form_crear(self, e):
-        # Campos del formulario
         self.usuario_id_field = ft.TextField(label="ID", value="")
         self.nombre_field = ft.TextField(label="Nombre")
         self.email_field = ft.TextField(label="Email")
@@ -121,7 +118,6 @@ class UsuarioView:
         else:
             self.telefono_field.error_text = None
 
-        # Actualizar la página para mostrar los mensajes de error
         self.page.update()
 
         if hay_error:
@@ -150,8 +146,7 @@ class UsuarioView:
         if not usuario:
             return
 
-        # Campos del formulario con valores prellenados
-        self.usuario_id_field = ft.TextField(label="ID", disabled=False, value=str(usuario["id"]))
+        self.usuario_id_field = ft.TextField(label="ID", disabled=True, value=str(usuario["id"]))
         self.nombre_field = ft.TextField(label="Nombre", value=usuario["nombre"])
         self.email_field = ft.TextField(label="Email", value=usuario["email"])
         self.telefono_field = ft.TextField(label="Teléfono", value=usuario["telefono"])
@@ -177,7 +172,6 @@ class UsuarioView:
         self.page.update()
 
     def actualizar_usuario(self, usuario_id: str):
-        usuario = self.usuario_id_field.value.strip()
         nombre = self.nombre_field.value.strip()
         email = self.email_field.value.strip()
         telefono = self.telefono_field.value.strip()
@@ -205,7 +199,6 @@ class UsuarioView:
         else:
             self.telefono_field.error_text = None
 
-        # Actualizar la página para mostrar los mensajes de error
         self.page.update()
 
         if hay_error:
@@ -215,7 +208,7 @@ class UsuarioView:
             validate_email(email)
             validate_telefono(telefono)
             usuario = UserModel(
-                id=usuario,
+                id=usuario_id,
                 nombre=nombre,
                 email=email,
                 telefono=telefono,

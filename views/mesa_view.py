@@ -1,4 +1,3 @@
-# /views/mesa_view.py
 import flet as ft
 from services.crud_operations import (
     insertar_mesa,
@@ -19,10 +18,9 @@ class MesaView:
         self.mesas = leer_mesas()
 
     def get_view(self):
-        # Botón para crear nueva mesa
         btn_nueva_mesa = ft.ElevatedButton("Nueva Mesa", on_click=self.show_form_crear)
 
-        # Listado de mesas
+        # Obtenemos el listado de mesas
         self.refresh_list()
 
         # Agregar controles a la vista
@@ -65,7 +63,6 @@ class MesaView:
             self.page.update()
 
     def show_form_crear(self, e):
-        # Campos del formulario
         self.mesa_id_field = ft.TextField(label="ID", value="")
         self.numero_mesa_field = ft.TextField(label="Número de Mesa", value="")
         self.capacidad_field = ft.TextField(label="Capacidad", value="")
@@ -96,31 +93,30 @@ class MesaView:
         ubicacion = self.ubicacion_field.value.strip()
 
         # Inicializar un flag para detectar errores
-        hay_error = False
+        error = False
 
         # Validar campos obligatorios
         if not numero_mesa:
             self.numero_mesa_field.error_text = "Este campo es obligatorio."
-            hay_error = True
+            error = True
         else:
             self.numero_mesa_field.error_text = None
 
         if not capacidad:
             self.capacidad_field.error_text = "Este campo es obligatorio."
-            hay_error = True
+            error = True
         else:
             self.capacidad_field.error_text = None
 
         if not ubicacion:
             self.ubicacion_field.error_text = "Este campo es obligatorio."
-            hay_error = True
+            error = True
         else:
             self.ubicacion_field.error_text = None
 
-        # Actualizar la página para mostrar los mensajes de error
         self.page.update()
 
-        if hay_error:
+        if error:
             return  # Detener la ejecución si hay errores
 
         try:
@@ -145,7 +141,6 @@ class MesaView:
         if not mesa:
             return
 
-        # Campos del formulario con valores prellenados
         self.mesa_id_field = ft.TextField(label="ID", disabled=True, value=str(mesa["id"]))
         self.numero_mesa_field = ft.TextField(label="Número de Mesa", value=str(mesa["numero_mesa"]))
         self.capacidad_field = ft.TextField(label="Capacidad", value=str(mesa["capacidad"]))
@@ -175,37 +170,37 @@ class MesaView:
         ubicacion = self.ubicacion_field.value.strip()
 
         # Inicializar un flag para detectar errores
-        hay_error = False
+        error = False
 
         # Validar campos obligatorios
         if not numero_mesa:
             self.numero_mesa_field.error_text = "Este campo es obligatorio."
-            hay_error = True
+            error = True
         else:
             self.numero_mesa_field.error_text = None
 
         if not capacidad:
             self.capacidad_field.error_text = "Este campo es obligatorio."
-            hay_error = True
+            error = True
         else:
             self.capacidad_field.error_text = None
 
         if not ubicacion:
             self.ubicacion_field.error_text = "Este campo es obligatorio."
-            hay_error = True
+            error = True
         else:
             self.ubicacion_field.error_text = None
 
-        # Actualizar la página para mostrar los mensajes de error
         self.page.update()
 
-        if hay_error:
+        if error:
             return  # Detener la ejecución si hay errores
 
         try:
             numero_mesa = int(numero_mesa)
             capacidad = int(capacidad)
             mesa = MesaModel(
+                id=mesa_id,
                 numero_mesa=numero_mesa,
                 capacidad=capacidad,
                 ubicacion=ubicacion

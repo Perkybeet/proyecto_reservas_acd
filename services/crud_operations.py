@@ -1,11 +1,10 @@
-# /services/crud_operations.py
 from services.mongo_service import get_collection
 from models.user_model import UserModel
 from models.mesa_model import MesaModel
 from models.reserva_model import ReservaModel
 from bson.objectid import ObjectId
 
-# --- Funciones CRUD para Usuarios ---
+# --- Usuarios ---
 def insertar_usuario(user: UserModel):
     collection = get_collection("usuarios")
     result = collection.insert_one(user.model_dump())
@@ -23,7 +22,7 @@ def eliminar_usuario(user_id: str):
     collection = get_collection("usuarios")
     collection.delete_one({"id": user_id})
 
-# --- Funciones CRUD para Mesas ---
+# --- Mesas ---
 def insertar_mesa(mesa: MesaModel):
     collection = get_collection("mesas")
     result = collection.insert_one(mesa.model_dump())
@@ -41,7 +40,7 @@ def eliminar_mesa(mesa_id: str):
     collection = get_collection("mesas")
     collection.delete_one({"id": mesa_id})
 
-# --- Funciones CRUD para Reservas ---
+# --- Reservas ---
 def insertar_reserva(reserva: ReservaModel):
     collection = get_collection("reservas")
     # Convertir a diccionario y asegurar que las IDs son cadenas
@@ -52,7 +51,6 @@ def insertar_reserva(reserva: ReservaModel):
 def leer_reservas():
     collection = get_collection("reservas")
     reservas = list(collection.find())
-    # Convertir ObjectId a cadena para facilitar el manejo en la UI
     for reserva in reservas:
         reserva["id"] = str(reserva["id"])
         reserva["fecha_reserva"] = str(reserva["fecha_reserva"]).split()[0]

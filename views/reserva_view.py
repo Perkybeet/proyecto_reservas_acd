@@ -1,4 +1,3 @@
-# /views/reserva_view.py
 import flet as ft
 from services.crud_operations import (
     leer_reservas,
@@ -33,10 +32,9 @@ class ReservaView:
         self.usuarios = leer_usuarios()
 
     def get_view(self):
-        # Botón para crear nueva reserva
         btn_nueva_reserva = ft.ElevatedButton("Nueva Reserva", on_click=self.show_form_crear)
 
-        # Listado de reservas
+        # Obtener el listado de reservas
         self.refresh_list()
 
         # Agregar controles a la vista
@@ -65,6 +63,7 @@ class ReservaView:
 
             mesa = next((m for m in self.mesas if str(m["id"]) == mesa_id), None)
             mesa_numero = mesa["numero_mesa"] if mesa else "Desconocida"
+            ###
 
             reserva_item = ft.Row(
                 controls=[
@@ -87,7 +86,6 @@ class ReservaView:
             self.page.update()
 
     def show_form_crear(self, e):
-        # Obtener todos los usuarios para el Dropdown
         usuarios = self.usuarios
         opciones_usuarios = [
             ft.dropdown.Option(text=f"{user['nombre']}", key=str(user["id"]))
@@ -171,7 +169,6 @@ class ReservaView:
         else:
             self.fecha_reserva_field.error_text = None
 
-        # Actualizar la página para mostrar los mensajes de error
         self.page.update()
 
         if hay_error:
@@ -206,7 +203,6 @@ class ReservaView:
             ft.dropdown.Option(text=f"{user['nombre']}", key=user["id"])
             for user in usuarios
         ]
-        # Agregar una opción predeterminada
         opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario"))
 
         # Obtener todas las mesas para el Dropdown
@@ -215,7 +211,6 @@ class ReservaView:
             ft.dropdown.Option(text=f"{mesa['numero_mesa']}", key=mesa["id"])
             for mesa in mesas
         ]
-        # Agregar una opción predeterminada
         opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa"))
 
         # Campos del formulario con valores prellenados
@@ -293,7 +288,6 @@ class ReservaView:
         else:
             self.fecha_reserva_field.error_text = None
 
-        # Actualizar la página para mostrar los mensajes de error
         self.page.update()
 
         if hay_error:
@@ -302,6 +296,7 @@ class ReservaView:
         try:
             validate_fecha(fecha_reserva)
             reserva = ReservaModel(
+                id=reserva_id,
                 cliente_id=cliente_id,
                 mesa_id=mesa_id,
                 fecha_reserva=fecha_reserva,
