@@ -126,3 +126,4 @@ def main_view(page: ft.Page):
 
     # Mostrar el resumen global por defecto al iniciar
     mostrar_resumen()
+    page.update()
