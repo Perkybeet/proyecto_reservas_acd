@@ -4,7 +4,6 @@ from datetime import datetime
 from bson import ObjectId
 
 class ReservaModel(BaseModel):
-    id: str = None
     cliente_id: str = None
     mesa_id: str = None
     fecha_reserva: datetime = None

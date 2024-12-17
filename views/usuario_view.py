@@ -45,7 +45,6 @@ class UsuarioView:
 
             usuario_item = ft.Row(
                 controls=[
-                    ft.Text(f"ID: {usuario_id}"),
                     ft.Text(f"Nombre: {nombre}"),
                     ft.Text(f"Email: {email}"),
                     ft.Text(f"Teléfono: {telefono}"),
@@ -64,7 +63,6 @@ class UsuarioView:
             self.page.update()
 
     def show_form_crear(self, e):
-        self.usuario_id_field = ft.TextField(label="ID", value="")
         self.nombre_field = ft.TextField(label="Nombre")
         self.email_field = ft.TextField(label="Email")
         self.telefono_field = ft.TextField(label="Teléfono")
@@ -73,7 +71,6 @@ class UsuarioView:
         self.form = ft.AlertDialog(
             title=ft.Text("Crear Nuevo Usuario"),
             content=ft.Column([
-                self.usuario_id_field,
                 self.nombre_field,
                 self.email_field,
                 self.telefono_field,
@@ -90,7 +87,6 @@ class UsuarioView:
         self.page.update()
 
     def crear_usuario(self, e):
-        usuario_id = self.usuario_id_field.value.strip()
         nombre = self.nombre_field.value.strip()
         email = self.email_field.value.strip()
         telefono = self.telefono_field.value.strip()
@@ -127,7 +123,6 @@ class UsuarioView:
             validate_email(email)
             validate_telefono(telefono)
             usuario = UserModel(
-                id=usuario_id,
                 nombre=nombre,
                 email=email,
                 telefono=telefono,
@@ -208,7 +203,6 @@ class UsuarioView:
             validate_email(email)
             validate_telefono(telefono)
             usuario = UserModel(
-                id=usuario_id,
                 nombre=nombre,
                 email=email,
                 telefono=telefono,

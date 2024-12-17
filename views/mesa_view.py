@@ -44,7 +44,6 @@ class MesaView:
 
             mesa_item = ft.Row(
                 controls=[
-                    ft.Text(f"ID: {mesa_id}"),
                     ft.Text(f"Número: {numero_mesa}"),
                     ft.Text(f"Capacidad: {capacidad}"),
                     ft.Text(f"Ubicación: {ubicacion}"),
@@ -63,7 +62,6 @@ class MesaView:
             self.page.update()
 
     def show_form_crear(self, e):
-        self.mesa_id_field = ft.TextField(label="ID", value="")
         self.numero_mesa_field = ft.TextField(label="Número de Mesa", value="")
         self.capacidad_field = ft.TextField(label="Capacidad", value="")
         self.ubicacion_field = ft.TextField(label="Ubicación")
@@ -71,7 +69,6 @@ class MesaView:
         self.form = ft.AlertDialog(
             title=ft.Text("Crear Nueva Mesa"),
             content=ft.Column([
-                self.mesa_id_field,
                 self.numero_mesa_field,
                 self.capacidad_field,
                 self.ubicacion_field
@@ -87,7 +84,6 @@ class MesaView:
         self.page.update()
 
     def crear_mesa(self, e):
-        mesa_id = self.mesa_id_field.value.strip()
         numero_mesa = self.numero_mesa_field.value.strip()
         capacidad = self.capacidad_field.value.strip()
         ubicacion = self.ubicacion_field.value.strip()
@@ -123,7 +119,6 @@ class MesaView:
             numero_mesa = int(numero_mesa)
             capacidad = int(capacidad)
             mesa = MesaModel(
-                id=mesa_id,
                 numero_mesa=numero_mesa,
                 capacidad=capacidad,
                 ubicacion=ubicacion
@@ -200,7 +195,6 @@ class MesaView:
             numero_mesa = int(numero_mesa)
             capacidad = int(capacidad)
             mesa = MesaModel(
-                id=mesa_id,
                 numero_mesa=numero_mesa,
                 capacidad=capacidad,
                 ubicacion=ubicacion

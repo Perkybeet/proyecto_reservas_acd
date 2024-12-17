@@ -1,4 +1,5 @@
 import flet as ft
+from datetime import datetime
 from services.crud_operations import (
     leer_reservas,
     insertar_reserva,
@@ -21,9 +22,14 @@ class ReservaView:
         self.load_reservas()
         self.load_mesas()
         self.load_usuarios()
+
         # Variables para almacenar fecha y hora temporalmente
         self.selected_date = None
         self.selected_time = None
+
+        # Referencias a campos del formulario para actualizarlos después de seleccionar fecha/hora
+        self.fecha_field = None
+        self.hora_field = None
 
     def load_reservas(self):
         self.reservas = leer_reservas()
@@ -53,8 +59,27 @@ class ReservaView:
             reserva_id = str(reserva["id"])
             cliente_id = reserva["cliente_id"]
             mesa_id = reserva["mesa_id"]
-            fecha_reserva = reserva["fecha_reserva"]
+            fecha_reserva_str = reserva["fecha_reserva"]
             estado = reserva["estado"]
+
+            # Depuración: Imprimir el valor de fecha_reserva_str
+            print(f"Procesando reserva ID {reserva_id}: fecha_reserva = {fecha_reserva_str}")
+
+            # Convertir la cadena de fecha a objeto datetime
+            fecha_reserva = None
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+                try:
+                    fecha_reserva = datetime.strptime(fecha_reserva_str, fmt)
+                    break  # Salir del ciclo si la conversión fue exitosa
+                except ValueError:
+                    continue  # Intentar el siguiente formato
+
+            if not fecha_reserva:
+                # Manejar el error si el formato no coincide
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"Formato de fecha inválido para la reserva ID {reserva_id}"))
+                self.page.snack_bar.open = True
+                self.page.update()
+                continue  # Saltar a la siguiente reserva
 
             # Obtener el nombre del usuario y número de mesa
             usuario = next((u for u in self.usuarios if str(u["id"]) == cliente_id), None)
@@ -67,7 +92,7 @@ class ReservaView:
                 controls=[
                     ft.Text(f"Usuario: {usuario_nombre}"),
                     ft.Text(f"Mesa: {mesa_numero}"),
-                    ft.Text(f"Fecha: {fecha_reserva}"),
+                    ft.Text(f"Fecha: {fecha_reserva.strftime('%Y-%m-%d %H:%M')}"),
                     ft.Text(f"Estado: {estado}"),
                     ft.IconButton(ft.icons.EDIT, on_click=lambda e, rid=reserva_id: self.show_form_editar(rid)),
                     ft.IconButton(ft.icons.DELETE, on_click=lambda e, rid=reserva_id: self.confirm_delete(rid)),
@@ -89,17 +114,16 @@ class ReservaView:
             ft.dropdown.Option(text=f"{user['nombre']}", key=str(user["id"]))
             for user in usuarios
         ]
-        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario"))
+        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario", key=""))
 
         mesas = self.mesas
         opciones_mesas = [
             ft.dropdown.Option(text=f"{mesa['numero_mesa']}", key=str(mesa["id"]))
             for mesa in mesas
         ]
-        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa"))
+        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", key=""))
 
-        # Campos del formulario
-        self.reserva_id_field = ft.TextField(label="ID")
+        self.reserva_id_field = ft.TextField(label="ID", visible=False)
         self.cliente_dropdown = ft.Dropdown(label="Usuario", options=opciones_usuarios)
         self.mesa_id_dropdown = ft.Dropdown(label="Mesa", options=opciones_mesas)
 
@@ -107,7 +131,6 @@ class ReservaView:
         self.fecha_field = ft.TextField(label="Fecha", read_only=True)
         self.hora_field = ft.TextField(label="Hora", read_only=True)
 
-        # Botones para seleccionar fecha y hora
         btn_seleccionar_fecha = ft.IconButton(
             icon=ft.icons.CALENDAR_MONTH,
             on_click=self.pick_date
@@ -132,7 +155,6 @@ class ReservaView:
             title=ft.Text("Crear Nueva Reserva"),
             content=ft.Container(
                 content=ft.Column([
-                    self.reserva_id_field,
                     self.cliente_dropdown,
                     self.mesa_id_dropdown,
                     ft.Row([self.fecha_field, btn_seleccionar_fecha]),
@@ -140,7 +162,7 @@ class ReservaView:
                     self.estado_field,
                     self.notas_field
                 ]),
-                width=500,  # Ajusta este valor a tus necesidades
+                width=350,
             ),
             actions=[
                 ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
@@ -152,35 +174,60 @@ class ReservaView:
         self.form.open = True
         self.page.update()
 
-    async def pick_date(self, e):
-        selected = await self.page.show_date_picker()
-        if selected:
-            self.selected_date = selected.strftime("%Y-%m-%d")
-            self.fecha_field.value = self.selected_date
+    def on_date_change(self, e):
+        if e.control.value:
+            self.selected_date = e.control.value
+            self.fecha_field.value = self.selected_date.strftime("%Y-%m-%d")
             self.page.update()
 
-    async def pick_time(self, e):
-        selected = await self.page.show_time_picker()
-        if selected:
-            self.selected_time = selected.strftime("%H:%M")
-            self.hora_field.value = self.selected_time
+    def on_date_dismiss(self, e):
+        pass  # No se requiere acción adicional
+
+    def on_time_change(self, e):
+        tp: ft.TimePicker = e.control
+        if tp.value:
+            self.selected_time = tp.value
+            self.hora_field.value = self.selected_time.strftime("%H:%M")
             self.page.update()
+
+    def on_time_dismiss(self, e):
+        pass  # No se requiere acción adicional
+
+    def pick_date(self, e):
+        date_picker = ft.DatePicker(
+            first_date=datetime(year=2024, month=10, day=1),
+            last_date=datetime(year=2050, month=10, day=1),
+            on_change=self.on_date_change,
+            on_dismiss=self.on_date_dismiss,
+        )
+        self.page.overlay.append(date_picker)
+        date_picker.open = True
+        self.page.update()
+
+    def pick_time(self, e):
+        time_picker = ft.TimePicker(
+            on_change=self.on_time_change,
+            on_dismiss=self.on_time_dismiss,
+        )
+        self.page.overlay.append(time_picker)
+        time_picker.open = True
+        self.page.update()
 
     def crear_reserva(self, e):
-        reserva_id = self.reserva_id_field.value.strip()
         cliente_id = self.cliente_dropdown.value
         mesa_id = self.mesa_id_dropdown.value
         estado = self.estado_field.value
         notas = self.notas_field.value.strip()
 
-        # Combinar fecha y hora
-        fecha = self.fecha_field.value.strip()
-        hora = self.hora_field.value.strip()
-        fecha_reserva = ""
-        if fecha and hora:
-            fecha_reserva = f"{fecha} {hora}"
+        # Combinar fecha y hora usando objetos datetime
+        if self.selected_date and self.selected_time:
+            fecha_reserva = datetime.combine(self.selected_date, self.selected_time)
         else:
-            fecha_reserva = ""  # Forzar error de validación si falta algo
+            fecha_reserva = None
+
+        print(f"Fecha seleccionada: {self.selected_date}")
+        print(f"Hora seleccionada: {self.selected_time}")
+        print(f"Fecha y Hora combinadas: {fecha_reserva}")
 
         # Validaciones
         hay_error = False
@@ -196,9 +243,16 @@ class ReservaView:
         else:
             self.mesa_id_dropdown.error_text = None
 
-        if not fecha or not hora:
-            self.fecha_field.error_text = "Seleccione fecha."
-            self.hora_field.error_text = "Seleccione hora."
+        if not fecha_reserva:
+            if not self.selected_date:
+                self.fecha_field.error_text = "Seleccione fecha."
+            else:
+                self.fecha_field.error_text = None
+
+            if not self.selected_time:
+                self.hora_field.error_text = "Seleccione hora."
+            else:
+                self.hora_field.error_text = None
             hay_error = True
         else:
             self.fecha_field.error_text = None
@@ -212,7 +266,6 @@ class ReservaView:
         try:
             validate_fecha(fecha_reserva)
             reserva = ReservaModel(
-                id=reserva_id,
                 cliente_id=cliente_id,
                 mesa_id=mesa_id,
                 fecha_reserva=fecha_reserva,
@@ -234,40 +287,50 @@ class ReservaView:
 
         usuarios = self.usuarios
         opciones_usuarios = [
-            ft.dropdown.Option(text=f"{user['nombre']}", key=user["id"])
+            ft.dropdown.Option(text=f"{user['nombre']}", key=str(user["id"]))
             for user in usuarios
         ]
-        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario"))
+        opciones_usuarios.insert(0, ft.dropdown.Option(text="Seleccione un usuario", key=""))
 
         mesas = self.mesas
         opciones_mesas = [
-            ft.dropdown.Option(text=f"{mesa['numero_mesa']}", key=mesa["id"])
+            ft.dropdown.Option(text=f"{mesa['numero_mesa']}", key=str(mesa["id"]))
             for mesa in mesas
         ]
-        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa"))
+        opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", key=""))
 
-        # Separar fecha y hora de la reserva actual
-        # Asumiendo que reserva["fecha_reserva"] es algo como "YYYY-MM-DD HH:MM"
         fecha_completa = reserva["fecha_reserva"]
-        fecha_partes = fecha_completa.split(" ")
-        fecha_val = fecha_partes[0] if len(fecha_partes) > 0 else ""
-        hora_val = fecha_partes[1] if len(fecha_partes) > 1 else ""
+        if isinstance(fecha_completa, str):
+            # Si fecha_completa es una cadena, parsearla
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+                try:
+                    fecha_completa = datetime.strptime(fecha_completa, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"Formato de fecha inválido para la reserva ID {reserva_id}"))
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
 
-        # Guardar en variables para el picker
-        self.selected_date = fecha_val
-        self.selected_time = hora_val
+        fecha_val = fecha_completa.strftime("%Y-%m-%d")
+        hora_val = fecha_completa.strftime("%H:%M")
+
+        self.selected_date = fecha_completa.date()
+        self.selected_time = fecha_completa.time()
 
         self.reserva_id_field = ft.TextField(label="ID", disabled=True, value=str(reserva["id"]))
         self.cliente_dropdown = ft.Dropdown(
             label="Usuario",
             options=opciones_usuarios,
-            value=reserva["cliente_id"],
+            value=str(reserva["cliente_id"]),
         )
 
         self.mesa_id_dropdown = ft.Dropdown(
             label="Mesa",
             options=opciones_mesas,
-            value=reserva["mesa_id"],
+            value=str(reserva["mesa_id"]),
         )
 
         self.fecha_field = ft.TextField(label="Fecha", read_only=True, value=fecha_val)
@@ -295,15 +358,18 @@ class ReservaView:
 
         self.form = ft.AlertDialog(
             title=ft.Text("Editar Reserva"),
-            content=ft.Column([
-                self.reserva_id_field,
-                self.cliente_dropdown,
-                self.mesa_id_dropdown,
-                ft.Row([self.fecha_field, btn_seleccionar_fecha]),
-                ft.Row([self.hora_field, btn_seleccionar_hora]),
-                self.estado_field,
-                self.notas_field
-            ]),
+            content=ft.Container(
+                content=ft.Column([
+                    self.reserva_id_field,
+                    self.cliente_dropdown,
+                    self.mesa_id_dropdown,
+                    ft.Row([self.fecha_field, btn_seleccionar_fecha]),
+                    ft.Row([self.hora_field, btn_seleccionar_hora]),
+                    self.estado_field,
+                    self.notas_field
+                ]),
+                width=350,
+            ),
             actions=[
                 ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
                 ft.ElevatedButton("Actualizar", on_click=lambda e: self.actualizar_reserva(reserva_id)),
@@ -320,13 +386,20 @@ class ReservaView:
         estado = self.estado_field.value
         notas = self.notas_field.value.strip()
 
+        # Combinar fecha y hora
         fecha = self.fecha_field.value.strip()
         hora = self.hora_field.value.strip()
 
         if fecha and hora:
-            fecha_reserva = f"{fecha} {hora}"
+            try:
+                fecha_reserva = datetime.strptime(f"{fecha} {hora}", "%Y-%m-%d %H:%M")
+            except ValueError:
+                self.page.snack_bar = ft.SnackBar(ft.Text("Fecha y hora inválidas. Formato esperado: YYYY-MM-DD HH:MM"))
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
         else:
-            fecha_reserva = ""
+            fecha_reserva = None
 
         # Validaciones
         hay_error = False
@@ -343,8 +416,15 @@ class ReservaView:
             self.mesa_id_dropdown.error_text = None
 
         if not fecha or not hora:
-            self.fecha_field.error_text = "Seleccione fecha."
-            self.hora_field.error_text = "Seleccione hora."
+            if not fecha:
+                self.fecha_field.error_text = "Seleccione fecha."
+            else:
+                self.fecha_field.error_text = None
+
+            if not hora:
+                self.hora_field.error_text = "Seleccione hora."
+            else:
+                self.hora_field.error_text = None
             hay_error = True
         else:
             self.fecha_field.error_text = None

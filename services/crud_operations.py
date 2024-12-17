@@ -1,3 +1,4 @@
+from datetime import timedelta
 from services.mongo_service import get_collection
 from models.user_model import UserModel
 from models.mesa_model import MesaModel
@@ -12,15 +13,18 @@ def insertar_usuario(user: UserModel):
 
 def leer_usuarios():
     collection = get_collection("usuarios")
-    return list(collection.find())
+    usuarios = list(collection.find())
+    for usuario in usuarios:
+        usuario["id"] = str(usuario["_id"])
+    return usuarios
 
 def actualizar_usuario(user_id: str, user: UserModel):
     collection = get_collection("usuarios")
-    collection.update_one({"id": user_id}, {"$set": user.model_dump()})
+    collection.update_one({"_id": ObjectId(user_id)}, {"$set": user.model_dump()})
 
 def eliminar_usuario(user_id: str):
     collection = get_collection("usuarios")
-    collection.delete_one({"id": user_id})
+    collection.delete_one({"_id": ObjectId(user_id)})
 
 # --- Mesas ---
 def insertar_mesa(mesa: MesaModel):
@@ -30,41 +34,79 @@ def insertar_mesa(mesa: MesaModel):
 
 def leer_mesas():
     collection = get_collection("mesas")
-    return list(collection.find())
+    mesas = list(collection.find())
+    for mesa in mesas:
+        mesa["id"] = str(mesa["_id"])
+    return mesas
 
 def actualizar_mesa(mesa_id: str, mesa: MesaModel):
     collection = get_collection("mesas")
-    collection.update_one({"id": mesa_id}, {"$set": mesa.model_dump()})
+    collection.update_one({"_id": ObjectId(mesa_id)}, {"$set": mesa.model_dump()})
 
 def eliminar_mesa(mesa_id: str):
     collection = get_collection("mesas")
-    collection.delete_one({"id": mesa_id})
+    collection.delete_one({"_id": ObjectId(mesa_id)})
 
 # --- Reservas ---
 def insertar_reserva(reserva: ReservaModel):
     collection = get_collection("reservas")
-    # Convertir a diccionario y asegurar que las IDs son cadenas
-    reserva_model_dump = reserva.model_dump()
-    collection.insert_one(reserva_model_dump)
-    return True
+    
+    # Definir el rango de tiempo para la validación
+    rango = timedelta(hours=2)
+    fecha_inicio = reserva.fecha_reserva - rango
+    fecha_fin = reserva.fecha_reserva + rango
+    
+    # Buscar reservas superpuestas para diferentes personas en la misma mesa
+    reserva_existente = collection.find_one({
+        "mesa_id": reserva.mesa_id,
+        "cliente_id": {"$ne": reserva.cliente_id},
+        "fecha_reserva": {
+            "$gte": fecha_inicio,
+            "$lte": fecha_fin
+        }
+    })
+    
+    if reserva_existente:
+        raise ValueError("Ya existe una reserva para esta mesa en este horario.")
+    
+    result = collection.insert_one(reserva.model_dump())
+    return str(result.inserted_id)
 
 def leer_reservas():
     collection = get_collection("reservas")
     reservas = list(collection.find())
     for reserva in reservas:
-        reserva["id"] = str(reserva["id"])
-        reserva["fecha_reserva"] = str(reserva["fecha_reserva"]).split()[0]
+        reserva["id"] = str(reserva["_id"])
+        reserva["fecha_reserva"] = str(reserva["fecha_reserva"])
     return reservas
 
 def actualizar_reserva(reserva_id: str, reserva: ReservaModel):
     collection = get_collection("reservas")
-    # Convertir a diccionario y asegurar que las IDs son cadenas
-    reserva_model_dump = reserva.model_dump()
-    collection.update_one({"id": reserva_id}, {"$set": reserva_model_dump})
+    
+    # Definir el rango de tiempo para la validación
+    rango = timedelta(hours=2)
+    fecha_inicio = reserva.fecha_reserva - rango
+    fecha_fin = reserva.fecha_reserva + rango
+    
+    # Buscar reservas superpuestas para diferentes personas en la misma mesa, excluyendo la reserva actual
+    reserva_existente = collection.find_one({
+        "mesa_id": reserva.mesa_id,
+        "cliente_id": {"$ne": reserva.cliente_id},
+        "fecha_reserva": {
+            "$gte": fecha_inicio,
+            "$lte": fecha_fin
+        },
+        "_id": {"$ne": ObjectId(reserva_id)}
+    })
+    
+    if reserva_existente:
+        raise ValueError("Ya existe una reserva para esta mesa en este horario.")
+    
+    collection.update_one({"_id": ObjectId(reserva_id)}, {"$set": reserva.model_dump()})
 
 def eliminar_reserva(reserva_id: str):
     collection = get_collection("reservas")
-    collection.delete_one({"id": reserva_id})
+    collection.delete_one({"_id": ObjectId(reserva_id)})
 
 # --- Funciones de Conteo ---
 def contar_usuarios():
