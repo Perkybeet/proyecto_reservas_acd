@@ -18,16 +18,12 @@ class ReservaView:
         self.mesas = []
         self.usuarios = []
         self.list_view = ft.Column(spacing=15)
-        self.load_reservas()
         self.load_mesas()
         self.load_usuarios()
-
-        # Variables para almacenar fecha y hora temporalmente
         self.selected_date = None
-        self.selected_time = None
 
-    def load_reservas(self):
-        self.reservas = leer_reservas()
+    def load_reservas(self, fecha=None):
+        self.reservas = leer_reservas(fecha)
 
     def load_mesas(self):
         self.mesas = leer_mesas()
@@ -36,6 +32,33 @@ class ReservaView:
         self.usuarios = leer_usuarios()
 
     def get_view(self):
+        # DatePicker para filtrar reservas por fecha
+        date_picker_button = ft.IconButton(
+            icon=ft.icons.DATE_RANGE,
+            tooltip="Seleccionar Fecha",
+            on_click=self.pick_filter_date,
+            icon_color=ft.colors.BLUE_500
+        )
+
+        date_display = ft.Text(
+            value="Todas las reservas",
+            size=16,
+            weight="bold",
+            color=ft.colors.BLUE_700
+        )
+
+        self.date_display = date_display  # Para actualizar el texto cuando se selecciona una fecha
+
+        date_picker_row = ft.Row(
+            controls=[
+                date_display,
+                date_picker_button
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10
+        )
+
         btn_nueva_reserva = ft.FilledButton(
             "Nueva Reserva",
             icon=ft.icons.ADD,
@@ -47,9 +70,12 @@ class ReservaView:
                 padding=ft.Padding(left=20, right=20, top=10, bottom=10)
             )
         )
-        self.refresh_list()
+
+        self.refresh_list()  # Cargar reservas iniciales
+
         view = ft.Column(
             controls=[
+                date_picker_row,  # Agregar el DatePicker en la parte superior
                 ft.Row(
                     controls=[btn_nueva_reserva],
                     alignment=ft.MainAxisAlignment.END,
@@ -63,7 +89,8 @@ class ReservaView:
                         blur_radius=10,
                         color=ft.colors.GREY_200,
                         offset=ft.Offset(0, 4)
-                    )
+                    ),
+                    border_radius=ft.border_radius.all(12)
                 ),
             ],
             scroll=ft.ScrollMode.AUTO,
@@ -72,8 +99,8 @@ class ReservaView:
         )
         return view
 
-    def refresh_list(self):
-        self.load_reservas()
+    def refresh_list(self, fecha=None):
+        self.load_reservas(fecha)
         self.list_view.controls.clear()
         for reserva in self.reservas:
             reserva_id = str(reserva["id"])
@@ -84,26 +111,6 @@ class ReservaView:
 
             # Depuración: Imprimir el valor de fecha_reserva_str
             print(f"Procesando reserva ID {reserva_id}: fecha_reserva = {fecha_reserva_str}")
-
-            # Convertir la cadena de fecha a objeto datetime
-            fecha_reserva = None
-            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
-                try:
-                    fecha_reserva = datetime.strptime(fecha_reserva_str, fmt)
-                    break  # Salir del ciclo si la conversión fue exitosa
-                except ValueError:
-                    continue  # Intentar el siguiente formato
-
-            if not fecha_reserva:
-                # Manejar el error si el formato no coincide
-                self.page.snack_bar = ft.SnackBar(
-                    content=ft.Text(f"Formato de fecha inválido para la reserva ID {reserva_id}"),
-                    bgcolor=ft.colors.RED_500,
-                    open=True
-                )
-                self.page.snack_bar.open = True
-                self.page.update()
-                continue  # Saltar a la siguiente reserva
 
             # Obtener el nombre del usuario y número de mesa
             usuario = next((u for u in self.usuarios if str(u["id"]) == cliente_id), None)
@@ -122,7 +129,7 @@ class ReservaView:
                                 controls=[
                                     ft.Text(f"Usuario: {usuario_nombre}", size=16, weight="bold"),
                                     ft.Text(f"Mesa: {mesa_numero}", size=16),
-                                    ft.Text(f"Fecha: {fecha_reserva.strftime('%Y-%m-%d %H:%M')}", size=16),
+                                    ft.Text(f"Fecha: {fecha_reserva_str}", size=16),
                                     ft.Text(f"Estado: {estado}", size=16, color=self.get_estado_color(estado)),
                                     ft.Row(
                                         controls=[
@@ -154,7 +161,7 @@ class ReservaView:
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     )
                 ),
-                margin=ft.margin.only(bottom=15)
+                margin=ft.margin.only(bottom=15),
             )
             self.list_view.controls.append(reserva_card)
         self.page.update()
@@ -198,7 +205,7 @@ class ReservaView:
 
         btn_seleccionar_fecha = ft.IconButton(
             icon=ft.icons.CALENDAR_MONTH,
-            on_click=self.pick_date,
+            on_click=self.pick_form_date,
             tooltip="Seleccionar Fecha",
             icon_color=ft.colors.BLUE_500
         )
@@ -276,7 +283,7 @@ class ReservaView:
     def on_time_dismiss(self, e):
         pass  # No se requiere acción adicional
 
-    def pick_date(self, e):
+    def pick_form_date(self, e):
         date_picker = ft.DatePicker(
             first_date=datetime(year=2024, month=10, day=1),
             last_date=datetime(year=2050, month=10, day=1),
@@ -361,7 +368,7 @@ class ReservaView:
             )
             insertar_reserva(reserva)
             self.close_dialog()
-            self.refresh_list()
+            self.refresh_list(self.selected_date)  # Actualizar la lista con la fecha filtrada
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text("Reserva creada exitosamente!", color=ft.colors.WHITE),
                 bgcolor=ft.colors.GREEN_500,
@@ -400,13 +407,9 @@ class ReservaView:
         fecha_completa = reserva["fecha_reserva"]
         if isinstance(fecha_completa, str):
             # Si fecha_completa es una cadena, parsearla
-            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
-                try:
-                    fecha_completa = datetime.strptime(fecha_completa, fmt)
-                    break
-                except ValueError:
-                    continue
-            else:
+            try:
+                fecha_completa = datetime.strptime(fecha_completa, "%Y-%m-%d %H:%M")
+            except ValueError:
                 self.page.snack_bar = ft.SnackBar(
                     content=ft.Text(f"Formato de fecha inválido para la reserva ID {reserva_id}"),
                     bgcolor=ft.colors.RED_500,
@@ -442,7 +445,7 @@ class ReservaView:
 
         btn_seleccionar_fecha = ft.IconButton(
             icon=ft.icons.CALENDAR_MONTH,
-            on_click=self.pick_date,
+            on_click=self.pick_form_date,
             tooltip="Seleccionar Fecha",
             icon_color=ft.colors.BLUE_500
         )
@@ -578,7 +581,7 @@ class ReservaView:
             )
             actualizar_reserva(reserva_id, reserva)
             self.close_dialog()
-            self.refresh_list()
+            self.refresh_list(self.selected_date)  # Actualizar la lista con la fecha filtrada
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text("Reserva actualizada exitosamente!", color=ft.colors.WHITE),
                 bgcolor=ft.colors.GREEN_500,
@@ -625,11 +628,35 @@ class ReservaView:
     def eliminar_reserva(self, reserva_id):
         eliminar_reserva(reserva_id)
         self.close_dialog()
-        self.refresh_list()
+        self.refresh_list(self.selected_date)  # Actualizar la lista con la fecha filtrada
         self.page.snack_bar = ft.SnackBar(
             content=ft.Text("Reserva eliminada exitosamente!", color=ft.colors.WHITE),
             bgcolor=ft.colors.RED_500,
             duration=3000
         )
         self.page.snack_bar.open = True
+        self.page.update()
+
+    def pick_filter_date(self, e):
+        date_picker = ft.DatePicker(
+            first_date=datetime(year=2024, month=10, day=1),
+            last_date=datetime(year=2050, month=10, day=1),
+            on_change=self.on_filter_date_change,
+            on_dismiss=self.on_date_dismiss,
+            cancel_text="Cancelar",
+            confirm_text="Seleccionar",
+        )
+        self.page.overlay.append(date_picker)
+        date_picker.open = True
+        self.page.update()
+
+    def on_filter_date_change(self, e):
+        if e.control.value:
+            self.selected_date = e.control.value
+            self.date_display.value = f"Reservas para: {self.selected_date.strftime('%Y-%m-%d')}"
+            self.refresh_list(self.selected_date)
+        else:
+            self.selected_date = None
+            self.date_display.value = "Todas las reservas"
+            self.refresh_list()
         self.page.update()

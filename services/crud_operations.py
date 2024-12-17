@@ -4,6 +4,7 @@ from models.user_model import UserModel
 from models.mesa_model import MesaModel
 from models.reserva_model import ReservaModel
 from bson.objectid import ObjectId
+from datetime import datetime
 
 # --- Usuarios ---
 def insertar_usuario(user: UserModel):
@@ -72,14 +73,26 @@ def insertar_reserva(reserva: ReservaModel):
     result = collection.insert_one(reserva.model_dump())
     return str(result.inserted_id)
 
-def leer_reservas():
+def leer_reservas(fecha=None):
     collection = get_collection("reservas")
-    reservas = list(collection.find())
+    query = {}
+
+    if fecha:
+        # Definir el rango de la fecha seleccionada
+        start = datetime.combine(fecha, datetime.min.time())
+        end = datetime.combine(fecha, datetime.max.time())
+        query = {
+            "fecha_reserva": {
+                "$gte": start,
+                "$lte": end
+            }
+        }
+
+    reservas = list(collection.find(query))
     for reserva in reservas:
         reserva["id"] = str(reserva["_id"])
-        reserva["fecha_reserva"] = str(reserva["fecha_reserva"])
+        reserva["fecha_reserva"] = reserva["fecha_reserva"].strftime("%Y-%m-%d %H:%M")
     return reservas
-
 def actualizar_reserva(reserva_id: str, reserva: ReservaModel):
     collection = get_collection("reservas")
     
