@@ -11,14 +11,13 @@ from services.crud_operations import (
 from models.reserva_model import ReservaModel
 from utils.validators import validate_fecha
 
-
 class ReservaView:
     def __init__(self, page: ft.Page):
         self.page = page
         self.reservas = []
         self.mesas = []
         self.usuarios = []
-        self.list_view = ft.Column()
+        self.list_view = ft.Column(spacing=15)
         self.load_reservas()
         self.load_mesas()
         self.load_usuarios()
@@ -26,10 +25,6 @@ class ReservaView:
         # Variables para almacenar fecha y hora temporalmente
         self.selected_date = None
         self.selected_time = None
-
-        # Referencias a campos del formulario para actualizarlos después de seleccionar fecha/hora
-        self.fecha_field = None
-        self.hora_field = None
 
     def load_reservas(self):
         self.reservas = leer_reservas()
@@ -41,14 +36,39 @@ class ReservaView:
         self.usuarios = leer_usuarios()
 
     def get_view(self):
-        btn_nueva_reserva = ft.ElevatedButton("Nueva Reserva", on_click=self.show_form_crear)
+        btn_nueva_reserva = ft.FilledButton(
+            "Nueva Reserva",
+            icon=ft.icons.ADD,
+            on_click=self.show_form_crear,
+            bgcolor=ft.colors.BLUE_500,
+            color=ft.colors.WHITE,
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=10),
+                padding=ft.Padding(left=20, right=20, top=10, bottom=10)
+            )
+        )
         self.refresh_list()
         view = ft.Column(
             controls=[
-                btn_nueva_reserva,
-                self.list_view
+                ft.Row(
+                    controls=[btn_nueva_reserva],
+                    alignment=ft.MainAxisAlignment.END,
+                ),
+                ft.Divider(thickness=2, color=ft.colors.GREY_300),
+                ft.Container(
+                    content=self.list_view,
+                    bgcolor=ft.colors.WHITE,
+                    padding=ft.padding.all(20),
+                    shadow=ft.BoxShadow(
+                        blur_radius=10,
+                        color=ft.colors.GREY_200,
+                        offset=ft.Offset(0, 4)
+                    )
+                ),
             ],
-            scroll=ft.ScrollMode.AUTO
+            scroll=ft.ScrollMode.AUTO,
+            spacing=20,
+            expand=True
         )
         return view
 
@@ -76,7 +96,11 @@ class ReservaView:
 
             if not fecha_reserva:
                 # Manejar el error si el formato no coincide
-                self.page.snack_bar = ft.SnackBar(ft.Text(f"Formato de fecha inválido para la reserva ID {reserva_id}"))
+                self.page.snack_bar = ft.SnackBar(
+                    content=ft.Text(f"Formato de fecha inválido para la reserva ID {reserva_id}"),
+                    bgcolor=ft.colors.RED_500,
+                    open=True
+                )
                 self.page.snack_bar.open = True
                 self.page.update()
                 continue  # Saltar a la siguiente reserva
@@ -88,19 +112,60 @@ class ReservaView:
             mesa = next((m for m in self.mesas if str(m["id"]) == mesa_id), None)
             mesa_numero = mesa["numero_mesa"] if mesa else "Desconocida"
 
-            reserva_item = ft.Row(
-                controls=[
-                    ft.Text(f"Usuario: {usuario_nombre}"),
-                    ft.Text(f"Mesa: {mesa_numero}"),
-                    ft.Text(f"Fecha: {fecha_reserva.strftime('%Y-%m-%d %H:%M')}"),
-                    ft.Text(f"Estado: {estado}"),
-                    ft.IconButton(ft.icons.EDIT, on_click=lambda e, rid=reserva_id: self.show_form_editar(rid)),
-                    ft.IconButton(ft.icons.DELETE, on_click=lambda e, rid=reserva_id: self.confirm_delete(rid)),
-                ],
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+            reserva_card = ft.Card(
+                elevation=4,
+                content=ft.Container(
+                    padding=ft.padding.all(15),
+                    content=ft.Row(
+                        controls=[
+                            ft.Column(
+                                controls=[
+                                    ft.Text(f"Usuario: {usuario_nombre}", size=16, weight="bold"),
+                                    ft.Text(f"Mesa: {mesa_numero}", size=16),
+                                    ft.Text(f"Fecha: {fecha_reserva.strftime('%Y-%m-%d %H:%M')}", size=16),
+                                    ft.Text(f"Estado: {estado}", size=16, color=self.get_estado_color(estado)),
+                                    ft.Row(
+                                        controls=[
+                                            ft.IconButton(
+                                                ft.icons.EDIT,
+                                                tooltip="Editar Reserva",
+                                                on_click=lambda e, rid=reserva_id: self.show_form_editar(rid),
+                                                icon_color=ft.colors.BLUE_500
+                                            ),
+                                            ft.IconButton(
+                                                ft.icons.DELETE,
+                                                tooltip="Eliminar Reserva",
+                                                on_click=lambda e, rid=reserva_id: self.confirm_delete(rid),
+                                                icon_color=ft.colors.RED_500
+                                            ),
+                                        ],
+                                        spacing=10,
+                                        alignment=ft.MainAxisAlignment.START
+                                    ),
+                                ],
+                                spacing=5
+                            ),
+                            ft.Icon(
+                                ft.icons.LIBRARY_BOOKS_SHARP,
+                                color=ft.colors.BLUE_500,
+                                size=40,
+                            ),
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    )
+                ),
+                margin=ft.margin.only(bottom=15)
             )
-            self.list_view.controls.append(reserva_item)
+            self.list_view.controls.append(reserva_card)
         self.page.update()
+
+    def get_estado_color(self, estado):
+        colores = {
+            "Pendiente": ft.colors.ORANGE_500,
+            "Confirmada": ft.colors.GREEN_500,
+            "Cancelada": ft.colors.RED_500,
+        }
+        return colores.get(estado, ft.colors.GREY_500)
 
     def close_dialog(self):
         if self.page.dialog:
@@ -124,20 +189,24 @@ class ReservaView:
         opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", key=""))
 
         self.reserva_id_field = ft.TextField(label="ID", visible=False)
-        self.cliente_dropdown = ft.Dropdown(label="Usuario", options=opciones_usuarios)
-        self.mesa_id_dropdown = ft.Dropdown(label="Mesa", options=opciones_mesas)
+        self.cliente_dropdown = ft.Dropdown(label="Usuario", options=opciones_usuarios, expand=True)
+        self.mesa_id_dropdown = ft.Dropdown(label="Mesa", options=opciones_mesas, expand=True)
 
         # Campos para fecha y hora
-        self.fecha_field = ft.TextField(label="Fecha", read_only=True)
-        self.hora_field = ft.TextField(label="Hora", read_only=True)
+        self.fecha_field = ft.TextField(label="Fecha", read_only=True, expand=True)
+        self.hora_field = ft.TextField(label="Hora", read_only=True, expand=True)
 
         btn_seleccionar_fecha = ft.IconButton(
             icon=ft.icons.CALENDAR_MONTH,
-            on_click=self.pick_date
+            on_click=self.pick_date,
+            tooltip="Seleccionar Fecha",
+            icon_color=ft.colors.BLUE_500
         )
         btn_seleccionar_hora = ft.IconButton(
             icon=ft.icons.ACCESS_TIME,
-            on_click=self.pick_time
+            on_click=self.pick_time,
+            tooltip="Seleccionar Hora",
+            icon_color=ft.colors.BLUE_500
         )
 
         self.estado_field = ft.Dropdown(
@@ -147,28 +216,42 @@ class ReservaView:
                 ft.dropdown.Option(text="Confirmada"),
                 ft.dropdown.Option(text="Cancelada"),
             ],
-            value="Pendiente"
+            value="Pendiente",
+            expand=True,
         )
-        self.notas_field = ft.TextField(label="Notas")
+        self.notas_field = ft.TextField(label="Notas", multiline=True, expand=True)
 
         self.form = ft.AlertDialog(
-            title=ft.Text("Crear Nueva Reserva"),
+            title=ft.Text("Crear Nueva Reserva", size=20, weight="bold"),
             content=ft.Container(
                 content=ft.Column([
                     self.cliente_dropdown,
                     self.mesa_id_dropdown,
-                    ft.Row([self.fecha_field, btn_seleccionar_fecha]),
-                    ft.Row([self.hora_field, btn_seleccionar_hora]),
+                    ft.Row([self.fecha_field, btn_seleccionar_fecha], spacing=10),
+                    ft.Row([self.hora_field, btn_seleccionar_hora], spacing=10),
                     self.estado_field,
                     self.notas_field
                 ]),
-                width=350,
+                width=400,
             ),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
-                ft.ElevatedButton("Crear", on_click=self.crear_reserva),
+                ft.TextButton(
+                    "Cancelar",
+                    on_click=lambda e: self.close_dialog()
+                ),
+                ft.ElevatedButton(
+                    "Crear",
+                    on_click=self.crear_reserva,
+                    bgcolor=ft.colors.BLUE_500,
+                    color=ft.colors.WHITE,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(left=20, right=20, top=10, bottom=10)
+                    )
+                ),
             ],
-            actions_alignment=ft.MainAxisAlignment.END
+            actions_alignment=ft.MainAxisAlignment.END,
+            modal=True,
         )
         self.page.dialog = self.form
         self.form.open = True
@@ -199,6 +282,8 @@ class ReservaView:
             last_date=datetime(year=2050, month=10, day=1),
             on_change=self.on_date_change,
             on_dismiss=self.on_date_dismiss,
+            cancel_text="Cancelar",
+            confirm_text="Seleccionar",
         )
         self.page.overlay.append(date_picker)
         date_picker.open = True
@@ -208,6 +293,8 @@ class ReservaView:
         time_picker = ft.TimePicker(
             on_change=self.on_time_change,
             on_dismiss=self.on_time_dismiss,
+            cancel_text="Cancelar",
+            confirm_text="Seleccionar",
         )
         self.page.overlay.append(time_picker)
         time_picker.open = True
@@ -275,8 +362,19 @@ class ReservaView:
             insertar_reserva(reserva)
             self.close_dialog()
             self.refresh_list()
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text("Reserva creada exitosamente!", color=ft.colors.WHITE),
+                bgcolor=ft.colors.GREEN_500,
+                duration=3000
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
         except ValueError as ve:
-            self.page.snack_bar = ft.SnackBar(ft.Text(str(ve)))
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text(str(ve), color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED_500,
+                duration=3000
+            )
             self.page.snack_bar.open = True
             self.page.update()
 
@@ -309,7 +407,11 @@ class ReservaView:
                 except ValueError:
                     continue
             else:
-                self.page.snack_bar = ft.SnackBar(ft.Text(f"Formato de fecha inválido para la reserva ID {reserva_id}"))
+                self.page.snack_bar = ft.SnackBar(
+                    content=ft.Text(f"Formato de fecha inválido para la reserva ID {reserva_id}"),
+                    bgcolor=ft.colors.RED_500,
+                    duration=3000
+                )
                 self.page.snack_bar.open = True
                 self.page.update()
                 return
@@ -325,24 +427,30 @@ class ReservaView:
             label="Usuario",
             options=opciones_usuarios,
             value=str(reserva["cliente_id"]),
+            expand=True,
         )
 
         self.mesa_id_dropdown = ft.Dropdown(
             label="Mesa",
             options=opciones_mesas,
             value=str(reserva["mesa_id"]),
+            expand=True,
         )
 
-        self.fecha_field = ft.TextField(label="Fecha", read_only=True, value=fecha_val)
-        self.hora_field = ft.TextField(label="Hora", read_only=True, value=hora_val)
+        self.fecha_field = ft.TextField(label="Fecha", read_only=True, value=fecha_val, expand=True)
+        self.hora_field = ft.TextField(label="Hora", read_only=True, value=hora_val, expand=True)
 
         btn_seleccionar_fecha = ft.IconButton(
             icon=ft.icons.CALENDAR_MONTH,
-            on_click=self.pick_date
+            on_click=self.pick_date,
+            tooltip="Seleccionar Fecha",
+            icon_color=ft.colors.BLUE_500
         )
         btn_seleccionar_hora = ft.IconButton(
             icon=ft.icons.ACCESS_TIME,
-            on_click=self.pick_time
+            on_click=self.pick_time,
+            tooltip="Seleccionar Hora",
+            icon_color=ft.colors.BLUE_500
         )
 
         self.estado_field = ft.Dropdown(
@@ -352,29 +460,48 @@ class ReservaView:
                 ft.dropdown.Option(text="Confirmada"),
                 ft.dropdown.Option(text="Cancelada"),
             ],
-            value=reserva["estado"]
+            value=reserva["estado"],
+            expand=True,
         )
-        self.notas_field = ft.TextField(label="Notas", value=reserva.get("notas", ""))
+        self.notas_field = ft.TextField(
+            label="Notas",
+            value=reserva.get("notas", ""),
+            multiline=True,
+            expand=True
+        )
 
         self.form = ft.AlertDialog(
-            title=ft.Text("Editar Reserva"),
+            title=ft.Text("Editar Reserva", size=20, weight="bold"),
             content=ft.Container(
                 content=ft.Column([
                     self.reserva_id_field,
                     self.cliente_dropdown,
                     self.mesa_id_dropdown,
-                    ft.Row([self.fecha_field, btn_seleccionar_fecha]),
-                    ft.Row([self.hora_field, btn_seleccionar_hora]),
+                    ft.Row([self.fecha_field, btn_seleccionar_fecha], spacing=10),
+                    ft.Row([self.hora_field, btn_seleccionar_hora], spacing=10),
                     self.estado_field,
                     self.notas_field
                 ]),
-                width=350,
+                width=400,
             ),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
-                ft.ElevatedButton("Actualizar", on_click=lambda e: self.actualizar_reserva(reserva_id)),
+                ft.TextButton(
+                    "Cancelar",
+                    on_click=lambda e: self.close_dialog()
+                ),
+                ft.ElevatedButton(
+                    "Actualizar",
+                    on_click=lambda e: self.actualizar_reserva(reserva_id),
+                    bgcolor=ft.colors.BLUE_500,
+                    color=ft.colors.WHITE,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(left=20, right=20, top=10, bottom=10)
+                    )
+                ),
             ],
-            actions_alignment=ft.MainAxisAlignment.END
+            actions_alignment=ft.MainAxisAlignment.END,
+            modal=True,
         )
         self.page.dialog = self.form
         self.form.open = True
@@ -394,7 +521,11 @@ class ReservaView:
             try:
                 fecha_reserva = datetime.strptime(f"{fecha} {hora}", "%Y-%m-%d %H:%M")
             except ValueError:
-                self.page.snack_bar = ft.SnackBar(ft.Text("Fecha y hora inválidas. Formato esperado: YYYY-MM-DD HH:MM"))
+                self.page.snack_bar = ft.SnackBar(
+                    content=ft.Text("Fecha y hora inválidas. Formato esperado: YYYY-MM-DD HH:MM", color=ft.colors.WHITE),
+                    bgcolor=ft.colors.RED_500,
+                    duration=3000
+                )
                 self.page.snack_bar.open = True
                 self.page.update()
                 return
@@ -448,20 +579,44 @@ class ReservaView:
             actualizar_reserva(reserva_id, reserva)
             self.close_dialog()
             self.refresh_list()
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text("Reserva actualizada exitosamente!", color=ft.colors.WHITE),
+                bgcolor=ft.colors.GREEN_500,
+                duration=3000
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
         except ValueError as ve:
-            self.page.snack_bar = ft.SnackBar(ft.Text(str(ve)))
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text(str(ve), color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED_500,
+                duration=3000
+            )
             self.page.snack_bar.open = True
             self.page.update()
 
     def confirm_delete(self, reserva_id):
         confirm = ft.AlertDialog(
-            title=ft.Text("Confirmar Eliminación"),
-            content=ft.Text("¿Estás seguro de que deseas eliminar esta reserva?"),
+            title=ft.Text("Confirmar Eliminación", size=18, weight="bold"),
+            content=ft.Text("¿Estás seguro de que deseas eliminar esta reserva?", size=16),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
-                ft.ElevatedButton("Eliminar", on_click=lambda e: self.eliminar_reserva(reserva_id)),
+                ft.TextButton(
+                    "Cancelar",
+                    on_click=lambda e: self.close_dialog()
+                ),
+                ft.ElevatedButton(
+                    "Eliminar",
+                    on_click=lambda e: self.eliminar_reserva(reserva_id),
+                    bgcolor=ft.colors.RED_500,
+                    color=ft.colors.WHITE,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(left=20, right=20, top=10, bottom=10)
+                    )
+                ),
             ],
-            actions_alignment=ft.MainAxisAlignment.END
+            actions_alignment=ft.MainAxisAlignment.END,
+            modal=True,
         )
         self.page.dialog = confirm
         confirm.open = True
@@ -471,3 +626,10 @@ class ReservaView:
         eliminar_reserva(reserva_id)
         self.close_dialog()
         self.refresh_list()
+        self.page.snack_bar = ft.SnackBar(
+            content=ft.Text("Reserva eliminada exitosamente!", color=ft.colors.WHITE),
+            bgcolor=ft.colors.RED_500,
+            duration=3000
+        )
+        self.page.snack_bar.open = True
+        self.page.update()

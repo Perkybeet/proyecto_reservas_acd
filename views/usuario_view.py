@@ -12,25 +12,49 @@ class UsuarioView:
     def __init__(self, page: ft.Page):
         self.page = page
         self.usuarios = []
-        self.list_view = ft.Column()
+        self.list_view = ft.Column(spacing=15)
         self.load_usuarios()
 
     def load_usuarios(self):
         self.usuarios = leer_usuarios()
 
     def get_view(self):
-        btn_nuevo_usuario = ft.ElevatedButton("Nuevo Usuario", on_click=self.show_form_crear)
+        btn_nuevo_usuario = ft.FilledButton(
+            "Nuevo Cliente",
+            icon=ft.icons.ADD,
+            on_click=self.show_form_crear,
+            bgcolor=ft.colors.BLUE_500,
+            color=ft.colors.WHITE,
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=10),
+                padding=ft.Padding(left=20, right=20, top=10, bottom=10)
+            )
+        )
 
-        # Obtener el listado de usuarios
         self.refresh_list()
 
-        # Agrega controles a la vista
         view = ft.Column(
             controls=[
-                btn_nuevo_usuario,
-                self.list_view
+                ft.Row(
+                    controls=[btn_nuevo_usuario],
+                    alignment=ft.MainAxisAlignment.END,
+                ),
+                ft.Divider(thickness=2, color=ft.colors.GREY_300),
+                ft.Container(
+                    content=self.list_view,
+                    bgcolor=ft.colors.WHITE,
+                    border_radius=ft.border_radius.all(12),
+                    padding=ft.padding.all(20),
+                    shadow=ft.BoxShadow(
+                        blur_radius=10,
+                        color=ft.colors.GREY_200,
+                        offset=ft.Offset(0, 4)
+                    )
+                ),
             ],
-            scroll=ft.ScrollMode.AUTO
+            scroll=ft.ScrollMode.AUTO,
+            spacing=20,
+            expand=True
         )
         return view
 
@@ -43,17 +67,50 @@ class UsuarioView:
             email = usuario["email"]
             telefono = usuario["telefono"]
 
-            usuario_item = ft.Row(
-                controls=[
-                    ft.Text(f"Nombre: {nombre}"),
-                    ft.Text(f"Email: {email}"),
-                    ft.Text(f"Teléfono: {telefono}"),
-                    ft.IconButton(ft.icons.EDIT, on_click=lambda e, uid=usuario_id: self.show_form_editar(uid)),
-                    ft.IconButton(ft.icons.DELETE, on_click=lambda e, uid=usuario_id: self.confirm_delete(uid)),
-                ],
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+            usuario_card = ft.Card(
+                elevation=4,
+                content=ft.Container(
+                    padding=ft.padding.all(15),
+                    content=ft.Row(
+                        controls=[
+                            ft.Column(
+                                controls=[
+                                    ft.Text(f"Nombre: {nombre}", size=16, weight="bold"),
+                                    ft.Text(f"Email: {email}", size=16),
+                                    ft.Text(f"Teléfono: {telefono}", size=16),
+                                    ft.Row(
+                                        controls=[
+                                            ft.IconButton(
+                                                ft.icons.EDIT,
+                                                tooltip="Editar Usuario",
+                                                on_click=lambda e, uid=usuario_id: self.show_form_editar(uid),
+                                                icon_color=ft.colors.BLUE_500
+                                            ),
+                                            ft.IconButton(
+                                                ft.icons.DELETE,
+                                                tooltip="Eliminar Usuario",
+                                                on_click=lambda e, uid=usuario_id: self.confirm_delete(uid),
+                                                icon_color=ft.colors.RED_500
+                                            ),
+                                        ],
+                                        spacing=10,
+                                        alignment=ft.MainAxisAlignment.START
+                                    ),
+                                ],
+                                spacing=5
+                            ),
+                            ft.Icon(
+                                ft.icons.PERSON,
+                                color=ft.colors.BLUE_500,
+                                size=40,
+                            ),
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    )
+                ),
+                margin=ft.margin.only(bottom=15)
             )
-            self.list_view.controls.append(usuario_item)
+            self.list_view.controls.append(usuario_card)
         self.page.update()
 
     def close_dialog(self):
@@ -63,24 +120,40 @@ class UsuarioView:
             self.page.update()
 
     def show_form_crear(self, e):
-        self.nombre_field = ft.TextField(label="Nombre")
-        self.email_field = ft.TextField(label="Email")
-        self.telefono_field = ft.TextField(label="Teléfono")
+        self.nombre_field = ft.TextField(label="Nombre", autofocus=True)
+        self.email_field = ft.TextField(label="Email", keyboard_type=ft.KeyboardType.EMAIL)
+        self.telefono_field = ft.TextField(label="Teléfono", keyboard_type=ft.KeyboardType.PHONE)
         self.direccion_field = ft.TextField(label="Dirección")
 
         self.form = ft.AlertDialog(
-            title=ft.Text("Crear Nuevo Usuario"),
-            content=ft.Column([
-                self.nombre_field,
-                self.email_field,
-                self.telefono_field,
-                self.direccion_field
-            ]),
+            title=ft.Text("Crear Nuevo Cliente", size=20, weight="bold"),
+            content=ft.Container(
+                content=ft.Column([
+                    self.nombre_field,
+                    self.email_field,
+                    self.telefono_field,
+                    self.direccion_field
+                ]),
+                width=400,
+            ),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
-                ft.ElevatedButton("Crear", on_click=self.crear_usuario),
+                ft.TextButton(
+                    "Cancelar",
+                    on_click=lambda e: self.close_dialog()
+                ),
+                ft.ElevatedButton(
+                    "Crear",
+                    on_click=self.crear_usuario,
+                    bgcolor=ft.colors.BLUE_500,
+                    color=ft.colors.WHITE,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(left=20, right=20, top=10, bottom=10)
+                    )
+                ),
             ],
-            actions_alignment=ft.MainAxisAlignment.END
+            actions_alignment=ft.MainAxisAlignment.END,
+            modal=True,
         )
         self.page.dialog = self.form
         self.form.open = True
@@ -131,8 +204,19 @@ class UsuarioView:
             insertar_usuario(usuario)
             self.close_dialog()
             self.refresh_list()
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text("Usuario creado exitosamente!", color=ft.colors.WHITE),
+                bgcolor=ft.colors.GREEN_500,
+                duration=3000
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
         except ValueError as ve:
-            self.page.snack_bar = ft.SnackBar(ft.Text(str(ve)))
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text(str(ve), color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED_500,
+                duration=3000
+            )
             self.page.snack_bar.open = True
             self.page.update()
 
@@ -142,25 +226,41 @@ class UsuarioView:
             return
 
         self.usuario_id_field = ft.TextField(label="ID", disabled=True, value=str(usuario["id"]))
-        self.nombre_field = ft.TextField(label="Nombre", value=usuario["nombre"])
-        self.email_field = ft.TextField(label="Email", value=usuario["email"])
-        self.telefono_field = ft.TextField(label="Teléfono", value=usuario["telefono"])
+        self.nombre_field = ft.TextField(label="Nombre", value=usuario["nombre"], autofocus=True)
+        self.email_field = ft.TextField(label="Email", value=usuario["email"], keyboard_type=ft.KeyboardType.EMAIL)
+        self.telefono_field = ft.TextField(label="Teléfono", value=usuario["telefono"], keyboard_type=ft.KeyboardType.PHONE)
         self.direccion_field = ft.TextField(label="Dirección", value=usuario.get("direccion", ""))
 
         self.form = ft.AlertDialog(
-            title=ft.Text("Editar Usuario"),
-            content=ft.Column([
-                self.usuario_id_field,
-                self.nombre_field,
-                self.email_field,
-                self.telefono_field,
-                self.direccion_field
-            ]),
+            title=ft.Text("Editar Usuario", size=20, weight="bold"),
+            content=ft.Container(
+                content=ft.Column([
+                    self.usuario_id_field,
+                    self.nombre_field,
+                    self.email_field,
+                    self.telefono_field,
+                    self.direccion_field
+                ]),
+                width=400,
+            ),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
-                ft.ElevatedButton("Actualizar", on_click=lambda e: self.actualizar_usuario(usuario_id)),
+                ft.TextButton(
+                    "Cancelar",
+                    on_click=lambda e: self.close_dialog()
+                ),
+                ft.ElevatedButton(
+                    "Actualizar",
+                    on_click=lambda e: self.actualizar_usuario(usuario_id),
+                    bgcolor=ft.colors.BLUE_500,
+                    color=ft.colors.WHITE,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(left=20, right=20, top=10, bottom=10)
+                    )
+                ),
             ],
-            actions_alignment=ft.MainAxisAlignment.END
+            actions_alignment=ft.MainAxisAlignment.END,
+            modal=True,
         )
         self.page.dialog = self.form
         self.form.open = True
@@ -211,20 +311,44 @@ class UsuarioView:
             actualizar_usuario(usuario_id, usuario)
             self.close_dialog()
             self.refresh_list()
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text("Usuario actualizado exitosamente!", color=ft.colors.WHITE),
+                bgcolor=ft.colors.GREEN_500,
+                duration=3000
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
         except ValueError as ve:
-            self.page.snack_bar = ft.SnackBar(ft.Text(str(ve)))
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text(str(ve), color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED_500,
+                duration=3000
+            )
             self.page.snack_bar.open = True
             self.page.update()
 
     def confirm_delete(self, usuario_id):
         confirm = ft.AlertDialog(
-            title=ft.Text("Confirmar Eliminación"),
-            content=ft.Text("¿Estás seguro de que deseas eliminar este usuario?"),
+            title=ft.Text("Confirmar Eliminación", size=18, weight="bold"),
+            content=ft.Text("¿Estás seguro de que deseas eliminar este usuario?", size=16),
             actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.close_dialog()),
-                ft.ElevatedButton("Eliminar", on_click=lambda e: self.eliminar_usuario(usuario_id)),
+                ft.TextButton(
+                    "Cancelar",
+                    on_click=lambda e: self.close_dialog()
+                ),
+                ft.ElevatedButton(
+                    "Eliminar",
+                    on_click=lambda e: self.eliminar_usuario(usuario_id),
+                    bgcolor=ft.colors.RED_500,
+                    color=ft.colors.WHITE,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(left=20, right=20, top=10, bottom=10)
+                    )
+                ),
             ],
-            actions_alignment=ft.MainAxisAlignment.END
+            actions_alignment=ft.MainAxisAlignment.END,
+            modal=True,
         )
         self.page.dialog = confirm
         confirm.open = True
@@ -234,3 +358,10 @@ class UsuarioView:
         eliminar_usuario(usuario_id)
         self.close_dialog()
         self.refresh_list()
+        self.page.snack_bar = ft.SnackBar(
+            content=ft.Text("Usuario eliminado exitosamente!", color=ft.colors.WHITE),
+            bgcolor=ft.colors.RED_500,
+            duration=3000
+        )
+        self.page.snack_bar.open = True
+        self.page.update()

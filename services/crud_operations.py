@@ -88,7 +88,6 @@ def actualizar_reserva(reserva_id: str, reserva: ReservaModel):
     fecha_inicio = reserva.fecha_reserva - rango
     fecha_fin = reserva.fecha_reserva + rango
     
-    # Buscar reservas superpuestas para diferentes personas en la misma mesa, excluyendo la reserva actual
     reserva_existente = collection.find_one({
         "mesa_id": reserva.mesa_id,
         "cliente_id": {"$ne": reserva.cliente_id},
