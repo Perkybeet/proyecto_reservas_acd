@@ -1,2 +1,5 @@
 .venv
 __*
+__pychace__/
+__init*
+*.pyc
