@@ -63,8 +63,6 @@ class ReservaView:
             "Nueva Reserva",
             icon=ft.icons.ADD,
             on_click=self.show_form_crear,
-            bgcolor=ft.colors.BLUE_500,
-            color=ft.colors.WHITE,
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(radius=10),
                 padding=ft.Padding(left=20, right=20, top=10, bottom=10)
@@ -100,6 +98,7 @@ class ReservaView:
         return view
 
     def refresh_list(self, fecha=None):
+        self.page.update()
         self.load_reservas(fecha)
         self.list_view.controls.clear()
         for reserva in self.reservas:
@@ -108,9 +107,6 @@ class ReservaView:
             mesa_id = reserva["mesa_id"]
             fecha_reserva_str = reserva["fecha_reserva"]
             estado = reserva["estado"]
-
-            # Depuración: Imprimir el valor de fecha_reserva_str
-            print(f"Procesando reserva ID {reserva_id}: fecha_reserva = {fecha_reserva_str}")
 
             # Obtener el nombre del usuario y número de mesa
             usuario = next((u for u in self.usuarios if str(u["id"]) == cliente_id), None)

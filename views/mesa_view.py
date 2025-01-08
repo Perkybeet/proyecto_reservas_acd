@@ -22,8 +22,6 @@ class MesaView:
             "Nueva Mesa",
             icon=ft.icons.ADD,
             on_click=self.show_form_crear,
-            bgcolor=ft.colors.BLUE_500,
-            color=ft.colors.WHITE,
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(radius=10),
                 padding=ft.Padding(left=20, right=20, top=10, bottom=10)
