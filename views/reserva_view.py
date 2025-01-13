@@ -364,7 +364,7 @@ class ReservaView:
             )
             insertar_reserva(reserva)
             self.close_dialog()
-            self.refresh_list(self.selected_date)  # Actualizar la lista con la fecha filtrada
+            self.refresh_list()
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text("Reserva creada exitosamente!", color=ft.colors.WHITE),
                 bgcolor=ft.colors.GREEN_500,
