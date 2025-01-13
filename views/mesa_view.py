@@ -6,6 +6,7 @@ from services.crud_operations import (
     eliminar_mesa
 )
 from models.mesa_model import MesaModel
+from utils.validators import validate_nmesa
 
 class MesaView:
     def __init__(self, page: ft.Page):
@@ -187,6 +188,7 @@ class MesaView:
             return  # Detener la ejecución si hay errores
 
         try:
+            validate_nmesa(numero_mesa)
             numero_mesa = int(numero_mesa)
             capacidad = int(capacidad)
             mesa = MesaModel(
@@ -207,6 +209,14 @@ class MesaView:
         except ValueError:
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text("Número de mesa y capacidad deben ser números válidos.", color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED_500,
+                duration=3000
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
+        except Exception as e:
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text("El número de mesa ya existe", color=ft.colors.WHITE),
                 bgcolor=ft.colors.RED_500,
                 duration=3000
             )
@@ -290,6 +300,7 @@ class MesaView:
             return  # Detener la ejecución si hay errores
 
         try:
+            validate_nmesa
             numero_mesa = int(numero_mesa)
             capacidad = int(capacidad)
             mesa = MesaModel(
@@ -310,6 +321,14 @@ class MesaView:
         except ValueError:
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text("Número de mesa y capacidad deben ser números válidos.", color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED_500,
+                duration=3000
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
+        except Exception as e:
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text("El número de mesa ya existe", color=ft.colors.WHITE),
                 bgcolor=ft.colors.RED_500,
                 duration=3000
             )
