@@ -1,2 +1,2 @@
-MONGO_URI = "mongodb://localhost:27017/"
+MONGO_URI = "mongodb+srv://UserAdmin:UserAdmin@cluster0.u48kt.mongodb.net/"
 DATABASE_NAME = "librodereservas"
