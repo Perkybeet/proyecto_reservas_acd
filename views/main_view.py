@@ -5,6 +5,7 @@ from views.mesa_view import MesaView
 from services.crud_operations import contar_usuarios, contar_mesas, contar_reservas
 
 def main_view(page: ft.Page):
+    # Configuración básica de la página
     page.title = "Libro de Reservas"
     page.theme = ft.Theme(
         color_scheme=ft.ColorScheme(
@@ -23,7 +24,7 @@ def main_view(page: ft.Page):
     )
     page.update()
 
-    # Sidebar de navegación
+    # Definición de los elementos del menú lateral de navegación
     nav_items = [
         ft.NavigationRailDestination(icon=ft.icons.HOME, label="Resumen"),
         ft.NavigationRailDestination(icon=ft.icons.LIBRARY_BOOKS_SHARP, label="Reservas"),
@@ -31,26 +32,31 @@ def main_view(page: ft.Page):
         ft.NavigationRailDestination(icon=ft.icons.TABLE_CHART, label="Mesas"),
     ]
 
+    # Creación de la barra de navegación lateral
     nav_bar = ft.NavigationRail(
         destinations=nav_items,
         selected_index=0,
         label_type=ft.NavigationRailLabelType.ALL,
+        # Llama a la función navigate al cambiar de selección
         on_change=lambda e: navigate(e.control.selected_index),
         min_width=80,
         extended=False,
     )
 
-    # Contenedor principal para el contenido
+    # Contenedor principal donde se mostrará el contenido según la selección
     main_content = ft.Container(
         padding=20,
         expand=True,
         bgcolor=ft.colors.GREY_50,
     )
-    # Navegacion de la base de datos
+
+    # Función para manejar la navegación entre vistas
     def navigate(selected_index):
         if selected_index == 0:
+            # Muestra el resumen global
             mostrar_resumen()
         elif selected_index == 1:
+            # Crea y muestra la vista de Reservas
             reserva_view = ReservaView(page)
             main_content.content = ft.AnimatedSwitcher(
                 duration=300,
@@ -58,6 +64,7 @@ def main_view(page: ft.Page):
                 content=reserva_view.get_view(),
             )
         elif selected_index == 2:
+            # Crea y muestra la vista de Usuarios
             usuario_view = UsuarioView(page)
             main_content.content = ft.AnimatedSwitcher(
                 duration=300,
@@ -65,19 +72,24 @@ def main_view(page: ft.Page):
                 content=usuario_view.get_view(),
             )
         elif selected_index == 3:
+            # Crea y muestra la vista de Mesas
             mesa_view = MesaView(page)
             main_content.content = ft.AnimatedSwitcher(
                 duration=300,
                 transition=ft.AnimatedSwitcherTransition.FADE,
                 content=mesa_view.get_view(),
             )
+        # Actualiza la página para reflejar los cambios
         page.update()
 
+    # Función para mostrar el resumen global de la base de datos
     def mostrar_resumen():
+        # Obtiene los totales de usuarios, mesas y reservas
         total_usuarios = contar_usuarios()
         total_mesas = contar_mesas()
         total_reservas = contar_reservas()
 
+        # Construye la vista de resumen con tarjetas informativas
         resumen = ft.Column(
             controls=[
                 ft.Text("Resumen Global", size=32, weight="bold", color=ft.colors.BLUE_700),
@@ -96,6 +108,7 @@ def main_view(page: ft.Page):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
+        # Muestra la vista de resumen en el contenedor principal con una animación
         main_content.content = ft.AnimatedSwitcher(
             duration=300,
             transition=ft.AnimatedSwitcherTransition.FADE,
@@ -103,6 +116,7 @@ def main_view(page: ft.Page):
         )
         page.update()
 
+    # Función auxiliar para crear una tarjeta resumen con título, valor e ícono
     def create_summary_card(title, value, icon):
         return ft.Card(
             elevation=4,
@@ -127,7 +141,7 @@ def main_view(page: ft.Page):
             ),
         )
 
-    # Agregar la barra de navegación y el contenido principal a la página
+    # Agrega la barra de navegación y el contenedor principal a la página
     page.add(
         ft.Row(
             controls=[
@@ -138,5 +152,5 @@ def main_view(page: ft.Page):
         )
     )
 
-    # Mostrar el resumen global por defecto al iniciar
+    # Muestra el resumen global al iniciar la aplicación
     mostrar_resumen()

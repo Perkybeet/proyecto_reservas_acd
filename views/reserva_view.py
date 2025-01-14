@@ -14,25 +14,28 @@ from utils.validators import validate_fecha
 class ReservaView:
     def __init__(self, page: ft.Page):
         self.page = page
-        self.reservas = []
-        self.mesas = []
-        self.usuarios = []
-        self.list_view = ft.Column(spacing=15)
-        self.load_mesas()
-        self.load_usuarios()
-        self.selected_date = None
+        self.reservas = []  # Lista para almacenar reservas
+        self.mesas = []     # Lista para almacenar mesas
+        self.usuarios = []  # Lista para almacenar usuarios
+        self.list_view = ft.Column(spacing=15)  # Columna para listar tarjetas de reservas
+        self.load_mesas()   # Carga inicial de mesas
+        self.load_usuarios()# Carga inicial de usuarios
+        self.selected_date = None  # Fecha seleccionada para filtrar reservas
 
     def load_reservas(self, fecha=None):
+        # Carga reservas desde la base de datos, opcionalmente filtradas por fecha
         self.reservas = leer_reservas(fecha)
 
     def load_mesas(self):
+        # Carga mesas desde la base de datos
         self.mesas = leer_mesas()
 
     def load_usuarios(self):
+        # Carga usuarios desde la base de datos
         self.usuarios = leer_usuarios()
 
     def get_view(self):
-        # DatePicker para filtrar reservas por fecha
+        # Botón de DatePicker para filtrar reservas por fecha
         date_picker_button = ft.IconButton(
             icon=ft.icons.DATE_RANGE,
             tooltip="Seleccionar Fecha",
@@ -40,25 +43,23 @@ class ReservaView:
             icon_color=ft.colors.BLUE_500
         )
 
+        # Texto para mostrar la fecha seleccionada o indicar que se muestran todas las reservas
         date_display = ft.Text(
             value="Todas las reservas",
             size=16,
             weight="bold",
             color=ft.colors.BLUE_700
         )
-
-        self.date_display = date_display  # Para actualizar el texto cuando se selecciona una fecha
+        self.date_display = date_display  # Guarda referencia para actualizar el texto
 
         date_picker_row = ft.Row(
-            controls=[
-                date_display,
-                date_picker_button
-            ],
+            controls=[date_display, date_picker_button],
             alignment=ft.MainAxisAlignment.CENTER,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=10
         )
 
+        # Botón para crear una nueva reserva
         btn_nueva_reserva = ft.FilledButton(
             "Nueva Reserva",
             icon=ft.icons.ADD,
@@ -69,18 +70,19 @@ class ReservaView:
             )
         )
 
-        self.refresh_list()  # Cargar reservas iniciales
+        self.refresh_list()  # Carga inicial de reservas
 
+        # Construcción de la vista principal de reservas
         view = ft.Column(
             controls=[
-                date_picker_row,  # Agregar el DatePicker en la parte superior
+                date_picker_row,  # Fila con DatePicker para filtrar por fecha
                 ft.Row(
                     controls=[btn_nueva_reserva],
                     alignment=ft.MainAxisAlignment.END,
                 ),
                 ft.Divider(thickness=2, color=ft.colors.GREY_300),
                 ft.Container(
-                    content=self.list_view,
+                    content=self.list_view,  # Contenedor que muestra la lista de reservas
                     bgcolor=ft.colors.WHITE,
                     padding=ft.padding.all(20),
                     shadow=ft.BoxShadow(
@@ -98,6 +100,7 @@ class ReservaView:
         return view
 
     def refresh_list(self, fecha=None):
+        # Actualiza la lista de reservas, opcionalmente filtrando por fecha
         self.page.update()
         self.load_reservas(fecha)
         self.list_view.controls.clear()
@@ -108,13 +111,14 @@ class ReservaView:
             fecha_reserva_str = reserva["fecha_reserva"]
             estado = reserva["estado"]
 
-            # Obtener el nombre del usuario y número de mesa
+            # Obtiene el nombre del usuario y número de mesa relacionados a la reserva
             usuario = next((u for u in self.usuarios if str(u["id"]) == cliente_id), None)
             usuario_nombre = usuario["nombre"] if usuario else "Desconocido"
 
             mesa = next((m for m in self.mesas if str(m["id"]) == mesa_id), None)
             mesa_numero = mesa["numero_mesa"] if mesa else "Desconocida"
 
+            # Crea una tarjeta para cada reserva con detalles y botones de editar/eliminar
             reserva_card = ft.Card(
                 elevation=4,
                 content=ft.Container(
@@ -163,6 +167,7 @@ class ReservaView:
         self.page.update()
 
     def get_estado_color(self, estado):
+        # Devuelve un color basado en el estado de la reserva
         colores = {
             "Pendiente": ft.colors.ORANGE_500,
             "Confirmada": ft.colors.GREEN_500,
@@ -171,12 +176,15 @@ class ReservaView:
         return colores.get(estado, ft.colors.GREY_500)
 
     def close_dialog(self):
+        # Cierra cualquier diálogo abierto
         if self.page.dialog:
             self.page.dialog.open = False
             self.page.dialog = None
             self.page.update()
 
     def show_form_crear(self, e):
+        # Muestra el formulario para crear una nueva reserva
+        # Prepara opciones para seleccionar usuario y mesa desde dropdowns
         usuarios = self.usuarios
         opciones_usuarios = [
             ft.dropdown.Option(text=f"{user['nombre']}", key=str(user["id"]))
@@ -191,14 +199,16 @@ class ReservaView:
         ]
         opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", key=""))
 
+        # Campos del formulario para reserva
         self.reserva_id_field = ft.TextField(label="ID", visible=False)
         self.cliente_dropdown = ft.Dropdown(label="Usuario", options=opciones_usuarios, expand=True)
         self.mesa_id_dropdown = ft.Dropdown(label="Mesa", options=opciones_mesas, expand=True)
 
-        # Campos para fecha y hora
+        # Campos para seleccionar fecha y hora
         self.fecha_field = ft.TextField(label="Fecha", read_only=True, expand=True)
         self.hora_field = ft.TextField(label="Hora", read_only=True, expand=True)
 
+        # Botones para abrir pickers de fecha y hora
         btn_seleccionar_fecha = ft.IconButton(
             icon=ft.icons.CALENDAR_MONTH,
             on_click=self.pick_form_date,
@@ -212,6 +222,7 @@ class ReservaView:
             icon_color=ft.colors.BLUE_500
         )
 
+        # Dropdown para seleccionar el estado de la reserva y campo de notas
         self.estado_field = ft.Dropdown(
             label="Estado",
             options=[
@@ -224,6 +235,7 @@ class ReservaView:
         )
         self.notas_field = ft.TextField(label="Notas", multiline=True, expand=True)
 
+        # Configuración del diálogo de creación de reserva
         self.form = ft.AlertDialog(
             title=ft.Text("Crear Nueva Reserva", size=20, weight="bold"),
             content=ft.Container(
@@ -261,15 +273,17 @@ class ReservaView:
         self.page.update()
 
     def on_date_change(self, e):
+        # Maneja cambios en la selección de fecha del DatePicker del formulario
         if e.control.value:
             self.selected_date = e.control.value
             self.fecha_field.value = self.selected_date.strftime("%Y-%m-%d")
             self.page.update()
 
     def on_date_dismiss(self, e):
-        pass  # No se requiere acción adicional
+        pass  # No se requiere acción adicional al descartar el DatePicker
 
     def on_time_change(self, e):
+        # Maneja cambios en la selección de hora del TimePicker
         tp: ft.TimePicker = e.control
         if tp.value:
             self.selected_time = tp.value
@@ -277,9 +291,10 @@ class ReservaView:
             self.page.update()
 
     def on_time_dismiss(self, e):
-        pass  # No se requiere acción adicional
+        pass  # No se requiere acción adicional al descartar el TimePicker
 
     def pick_form_date(self, e):
+        # Abre un DatePicker para seleccionar la fecha en el formulario
         date_picker = ft.DatePicker(
             first_date=datetime(year=2024, month=10, day=1),
             last_date=datetime(year=2050, month=10, day=1),
@@ -293,6 +308,7 @@ class ReservaView:
         self.page.update()
 
     def pick_time(self, e):
+        # Abre un TimePicker para seleccionar la hora en el formulario
         time_picker = ft.TimePicker(
             on_change=self.on_time_change,
             on_dismiss=self.on_time_dismiss,
@@ -304,22 +320,19 @@ class ReservaView:
         self.page.update()
 
     def crear_reserva(self, e):
+        # Recoge datos del formulario para crear una nueva reserva
         cliente_id = self.cliente_dropdown.value
         mesa_id = self.mesa_id_dropdown.value
         estado = self.estado_field.value
         notas = self.notas_field.value.strip()
 
-        # Combinar fecha y hora usando objetos datetime
+        # Combina la fecha y hora seleccionadas para formar la fecha completa de la reserva
         if self.selected_date and self.selected_time:
             fecha_reserva = datetime.combine(self.selected_date, self.selected_time)
         else:
             fecha_reserva = None
 
-        print(f"Fecha seleccionada: {self.selected_date}")
-        print(f"Hora seleccionada: {self.selected_time}")
-        print(f"Fecha y Hora combinadas: {fecha_reserva}")
-
-        # Validaciones
+        # Validaciones de campos obligatorios
         hay_error = False
         if not cliente_id:
             self.cliente_dropdown.error_text = "Seleccione un usuario."
@@ -351,10 +364,12 @@ class ReservaView:
         self.page.update()
 
         if hay_error:
-            return
+            return  # No procede si hay errores en la validación
 
         try:
+            # Valida la fecha seleccionada
             validate_fecha(fecha_reserva)
+            # Crea el modelo de reserva y lo inserta en la base de datos
             reserva = ReservaModel(
                 cliente_id=cliente_id,
                 mesa_id=mesa_id,
@@ -365,6 +380,7 @@ class ReservaView:
             insertar_reserva(reserva)
             self.close_dialog()
             self.refresh_list()
+            # Notificación de éxito
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text("Reserva creada exitosamente!", color=ft.colors.WHITE),
                 bgcolor=ft.colors.GREEN_500,
@@ -373,6 +389,7 @@ class ReservaView:
             self.page.snack_bar.open = True
             self.page.update()
         except ValueError as ve:
+            # Muestra error si la validación de fecha falla
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text(str(ve), color=ft.colors.WHITE),
                 bgcolor=ft.colors.RED_500,
@@ -382,10 +399,12 @@ class ReservaView:
             self.page.update()
 
     def show_form_editar(self, reserva_id):
+        # Muestra el formulario para editar una reserva existente
         reserva = next((r for r in self.reservas if str(r["id"]) == reserva_id), None)
         if not reserva:
             return
 
+        # Prepara opciones de usuario y mesa para dropdowns
         usuarios = self.usuarios
         opciones_usuarios = [
             ft.dropdown.Option(text=f"{user['nombre']}", key=str(user["id"]))
@@ -400,9 +419,9 @@ class ReservaView:
         ]
         opciones_mesas.insert(0, ft.dropdown.Option(text="Seleccione una mesa", key=""))
 
+        # Parsear la fecha y hora de la reserva para llenar los campos
         fecha_completa = reserva["fecha_reserva"]
         if isinstance(fecha_completa, str):
-            # Si fecha_completa es una cadena, parsearla
             try:
                 fecha_completa = datetime.strptime(fecha_completa, "%Y-%m-%d %H:%M")
             except ValueError:
@@ -418,9 +437,11 @@ class ReservaView:
         fecha_val = fecha_completa.strftime("%Y-%m-%d")
         hora_val = fecha_completa.strftime("%H:%M")
 
+        # Establece fecha y hora seleccionadas para el formulario
         self.selected_date = fecha_completa.date()
         self.selected_time = fecha_completa.time()
 
+        # Campos del formulario de edición con valores preexistentes
         self.reserva_id_field = ft.TextField(label="ID", disabled=True, value=str(reserva["id"]))
         self.cliente_dropdown = ft.Dropdown(
             label="Usuario",
@@ -428,14 +449,12 @@ class ReservaView:
             value=str(reserva["cliente_id"]),
             expand=True,
         )
-
         self.mesa_id_dropdown = ft.Dropdown(
             label="Mesa",
             options=opciones_mesas,
             value=str(reserva["mesa_id"]),
             expand=True,
         )
-
         self.fecha_field = ft.TextField(label="Fecha", read_only=True, value=fecha_val, expand=True)
         self.hora_field = ft.TextField(label="Hora", read_only=True, value=hora_val, expand=True)
 
@@ -469,6 +488,7 @@ class ReservaView:
             expand=True
         )
 
+        # Configura el diálogo para editar reserva
         self.form = ft.AlertDialog(
             title=ft.Text("Editar Reserva", size=20, weight="bold"),
             content=ft.Container(
@@ -507,12 +527,13 @@ class ReservaView:
         self.page.update()
 
     def actualizar_reserva(self, reserva_id):
+        # Recoge datos del formulario para actualizar la reserva
         cliente_id = self.cliente_dropdown.value
         mesa_id = self.mesa_id_dropdown.value
         estado = self.estado_field.value
         notas = self.notas_field.value.strip()
 
-        # Combinar fecha y hora
+        # Combina fecha y hora para obtener la fecha completa de la reserva
         fecha = self.fecha_field.value.strip()
         hora = self.hora_field.value.strip()
 
@@ -531,7 +552,7 @@ class ReservaView:
         else:
             fecha_reserva = None
 
-        # Validaciones
+        # Validaciones de campos obligatorios
         hay_error = False
         if not cliente_id:
             self.cliente_dropdown.error_text = "Seleccione un usuario."
@@ -566,7 +587,9 @@ class ReservaView:
             return
 
         try:
+            # Valida la nueva fecha de la reserva
             validate_fecha(fecha_reserva)
+            # Crea el modelo de reserva actualizado y guarda los cambios
             reserva = ReservaModel(
                 id=reserva_id,
                 cliente_id=cliente_id,
@@ -577,7 +600,7 @@ class ReservaView:
             )
             actualizar_reserva(reserva_id, reserva)
             self.close_dialog()
-            self.refresh_list(self.selected_date)  # Actualizar la lista con la fecha filtrada
+            self.refresh_list()  # Refresca la lista filtrada por fecha si aplica
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text("Reserva actualizada exitosamente!", color=ft.colors.WHITE),
                 bgcolor=ft.colors.GREEN_500,
@@ -586,6 +609,7 @@ class ReservaView:
             self.page.snack_bar.open = True
             self.page.update()
         except ValueError as ve:
+            # Muestra error si la validación falla
             self.page.snack_bar = ft.SnackBar(
                 content=ft.Text(str(ve), color=ft.colors.WHITE),
                 bgcolor=ft.colors.RED_500,
@@ -595,6 +619,7 @@ class ReservaView:
             self.page.update()
 
     def confirm_delete(self, reserva_id):
+        # Muestra diálogo para confirmar eliminación de reserva
         confirm = ft.AlertDialog(
             title=ft.Text("Confirmar Eliminación", size=18, weight="bold"),
             content=ft.Text("¿Estás seguro de que deseas eliminar esta reserva?", size=16),
@@ -622,9 +647,10 @@ class ReservaView:
         self.page.update()
 
     def eliminar_reserva(self, reserva_id):
+        # Elimina la reserva de la base de datos y actualiza la lista
         eliminar_reserva(reserva_id)
         self.close_dialog()
-        self.refresh_list(self.selected_date)  # Actualizar la lista con la fecha filtrada
+        self.refresh_list(self.selected_date)  # Refresca la lista con la fecha filtrada si aplica
         self.page.snack_bar = ft.SnackBar(
             content=ft.Text("Reserva eliminada exitosamente!", color=ft.colors.WHITE),
             bgcolor=ft.colors.RED_500,
@@ -634,6 +660,7 @@ class ReservaView:
         self.page.update()
 
     def pick_filter_date(self, e):
+        # Abre un DatePicker para filtrar reservas por fecha
         date_picker = ft.DatePicker(
             first_date=datetime(year=2024, month=10, day=1),
             last_date=datetime(year=2050, month=10, day=1),
@@ -647,6 +674,7 @@ class ReservaView:
         self.page.update()
 
     def on_filter_date_change(self, e):
+        # Maneja el cambio de fecha para filtrar reservas
         if e.control.value:
             self.selected_date = e.control.value
             self.date_display.value = f"Reservas para: {self.selected_date.strftime('%Y-%m-%d')}"

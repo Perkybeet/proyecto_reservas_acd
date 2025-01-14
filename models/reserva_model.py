@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from bson import ObjectId
 
 class ReservaModel(BaseModel):
     cliente_id: str = None
