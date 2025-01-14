@@ -21,14 +21,14 @@ El acceso a la aplicación está restringido únicamente a los empleados del res
 
 ## Flujo de Inicio de Sesión
 
-1. Al iniciar la aplicación, se presenta una pantalla de login moderna y sencilla.
+1. Al iniciar la aplicación, se presenta una pantalla de login.
 2. El usuario ingresa sus credenciales (usuario y contraseña).
-3. Si las credenciales son correctas, se redirige al usuario a la **Main View** de la aplicación, donde puede gestionar clientes, mesas y reservas.
+3. Si las credenciales son correctas, se redirige al usuario al **Main View** de la aplicación, donde puede gestionar clientes, mesas y reservas.
 4. Si las credenciales son incorrectas, se muestra un aviso al usuario indicando que el acceso no fue autorizado.
 
 ## Arquitectura General
 
-La aplicación está desarrollada utilizando **Flet**, lo que permite crear interfaces gráficas modernas y receptivas para la gestión de datos en tiempo real. La arquitectura se compone de vistas modulares para cada sección de la aplicación (por ejemplo, `main_view` para la vista principal) y utiliza un diccionario para la validación de credenciales en el inicio de sesión.
+La aplicación está desarrollada utilizando **Flet**, lo que permite crear interfaces gráficas para la gestión de datos en tiempo real. La arquitectura se compone de vistas modulares para cada sección de la aplicación (por ejemplo, `main_view` para la vista principal) y utiliza un diccionario para la validación de credenciales en el inicio de sesión.
 
 ## Tecnologías Utilizadas
 

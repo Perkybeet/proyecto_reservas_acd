@@ -19,7 +19,7 @@ def login_view(page: ft.Page):
         if CREDENTIALS.get(usuario) == contraseña:
             # Limpiar la página y cargar la vista principal
             page.controls.clear()
-            main_view(page)  # Cargar main_view
+            main_view(page)
             page.update()
         else:
             # Mostrar un Snackbar indicando error
@@ -30,7 +30,7 @@ def login_view(page: ft.Page):
             )
             page.update()
 
-    # Botón de login
+    
     login_button = ft.ElevatedButton(text="Iniciar sesión", on_click=do_login, width=300)
 
     # Contenedor principal centrado vertical y horizontalmente
@@ -53,7 +53,7 @@ def login_view(page: ft.Page):
     page.add(login_form)
 
 def main(page: ft.Page):
-    login_view(page)  # Iniciar con la vista de login
+    login_view(page)
 
 if __name__ == "__main__":
     ft.app(target=main)

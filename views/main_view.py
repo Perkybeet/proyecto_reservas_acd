@@ -46,7 +46,7 @@ def main_view(page: ft.Page):
         expand=True,
         bgcolor=ft.colors.GREY_50,
     )
-
+    # Navegacion de la base de datos
     def navigate(selected_index):
         if selected_index == 0:
             mostrar_resumen()
