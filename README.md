@@ -35,3 +35,9 @@ La aplicación está desarrollada utilizando **Flet**, lo que permite crear inte
 - **Python:** Lenguaje de programación principal.
 - **Flet:** Framework para construir aplicaciones de escritorio con interfaces de usuario modernas.
 - **Base de Datos:** Se usa un gestor "mongodb" para almacenar la información de clientes, mesas y reservas.
+
+## Dependencias
+
+- **Pymongo:**
+- **Flet**
+- **Pydantic**
