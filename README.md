@@ -38,6 +38,6 @@ La aplicación está desarrollada utilizando **Flet**, lo que permite crear inte
 
 ## Dependencias
 
-- **Pymongo:**
+- **Pymongo**
 - **Flet**
 - **Pydantic**
